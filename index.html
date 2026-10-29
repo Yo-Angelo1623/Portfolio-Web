@@ -32,9 +32,13 @@
             Sobre mí
         </button>
 
-        <button onclick="mostrarSeccion('contacto')">
+        <a href="AngelTraz/blog.html">
+            Blog
+        </a>
+
+        <a href="AngelTraz/contacto.html">
             Contacto
-        </button>
+        </a>
 
         <button onclick="window.location.href='juegos.html'">
             Juegos
@@ -55,11 +59,25 @@
 
         <div class="contenido-simple">
 
-            <h1>AngelTraz</h1>
+            <div class="inicio-presentacion">
+                <div>
+                    <span class="inicio-etiqueta">Diseño · Imagen · Creación visual</span>
+                    <h1>AngelTraz</h1>
 
-            <p>
-                Diseño, imagen y creación visual.
-            </p>
+                    <p>
+                        Convierto ideas en imágenes: diseño gráfico, POD,
+                        animación, fotografía y modelado 3D bajo una misma
+                        identidad visual.
+                    </p>
+
+                    <div class="inicio-enlaces">
+                        <button type="button" onclick="mostrarSeccion('categorias')">Explorar proyectos</button>
+                        <a href="AngelTraz/blog.html">Leer el blog</a>
+                    </div>
+                </div>
+
+                <img src="img/Portada.jpeg" alt="Portada del portafolio AngelTraz">
+            </div>
 
         </div>
 
@@ -114,61 +132,102 @@
             <div class="categorias-detalle">
 
                 <article id="diseno-grafico" class="categoria-panel activa">
-                    <img src="img/Logo.jpeg" alt="Muestra de trabajo de diseño gráfico">
                     <h2>Diseño gráfico</h2>
                     <p>
                         Creo composiciones, ilustraciones y recursos visuales
                         buscando que cada propuesta tenga una función y una
                         identidad propia.
                     </p>
+                    <div class="galeria-trabajos">
+                        <img src="img/Logo.jpeg" alt="Diseño de identidad AngelTraz">
+                        <img src="img/Dise%C3%B1o/16.png" alt="Proyecto de diseño gráfico 16">
+                        <img src="img/Dise%C3%B1o/Anillas.jpg" alt="Diseño gráfico Anillas">
+                        <img src="img/Dise%C3%B1o/Flor%20esencial.png" alt="Diseño gráfico Flor esencial">
+                        <img src="img/Dise%C3%B1o/Halc%C3%B3n%20Sodero.png" alt="Diseño gráfico Halcón Sodero">
+                        <img src="img/Dise%C3%B1o/Handstand.jpg" alt="Diseño gráfico Handstand">
+                        <img src="img/Dise%C3%B1o/Mil.jpeg" alt="Proyecto de diseño gráfico Mil">
+                        <img src="img/Dise%C3%B1o/Shamsham.png" alt="Proyecto de diseño gráfico Shamsham">
+                    </div>
                 </article>
 
                 <article id="pod" class="categoria-panel">
-                    <img src="IMG/POD.jpeg" alt="Muestra de producto POD">
                     <h2>POD — Diseño aplicado</h2>
                     <p>
                         Llevo las ilustraciones y conceptos gráficos a
                         productos físicos mediante Print on Demand,
                         adaptando una misma idea a distintos formatos.
                     </p>
+                    <div class="galeria-trabajos">
+                        <img src="img/POD.jpeg" alt="Muestra de diseño aplicado a productos POD">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%201%20BN.png" alt="Diseño POD 1 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%201%20Color.png" alt="Diseño POD 1 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%202%20BN.png" alt="Diseño POD 2 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%202%20Color.png" alt="Diseño POD 2 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%203%20BN.png" alt="Diseño POD 3 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%203%20Color.png" alt="Diseño POD 3 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%204%20BN.png" alt="Diseño POD 4 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%204%20Color.png" alt="Diseño POD 4 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%205%20BN.png" alt="Diseño POD 5 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%205%20Color.png" alt="Diseño POD 5 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%206%20BN.png" alt="Diseño POD 6 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%206%20Color.png" alt="Diseño POD 6 a color">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dis%C3%B1eo%207%20BN.png" alt="Diseño POD 7 en blanco y negro">
+                        <img src="img/POD/Dise%C3%B1os%20POD/Dise%C3%B1o%207%20Color.png" alt="Diseño POD 7 a color">
+                    </div>
                 </article>
 
                 <article id="animacion-2d" class="categoria-panel">
-                    <source src="video/Aimación.mp4" type="video/mp4">
                     <h2>Animación 2D</h2>
                     <p>
                         Trabajo con personajes, escenarios y elementos
                         gráficos para construir piezas animadas y
                         proyectos audiovisuales.
                     </p>
+                    <div class="galeria-videos">
+                        <video class="video-muestra" controls preload="metadata">
+                            <source src="video/Aimación.mp4" type="video/mp4">
+                            Tu navegador no soporta la reproducción de video.
+                        </video>
+                        <video class="video-muestra" controls preload="metadata">
+                            <source src="video/Anim.mp4" type="video/mp4">
+                            Tu navegador no soporta la reproducción de video.
+                        </video>
+                    </div>
                 </article>
 
                 <article id="fotografia" class="categoria-panel">
-                    <img src="img/Vocho.jpeg" alt="Muestra de fotografía">
                     <h2>Fotografía</h2>
                     <p>
                         Llevo la narrativa visual al espacio físico,
                         experimentando con iluminación, composición,
                         escenarios y objetos.
                     </p>
+                    <div class="galeria-trabajos">
+                        <img src="img/Vocho.jpeg" alt="Fotografía de un vocho">
+                        <img src="img/Fotograf%C3%ADa/Ban.jpeg" alt="Fotografía Ban">
+                        <img src="img/Fotograf%C3%ADa/Bang.jpeg" alt="Fotografía Bang">
+                        <img src="img/Fotograf%C3%ADa/Lon.jpeg" alt="Fotografía Lon">
+                        <img src="img/Fotograf%C3%ADa/Vochol%C3%ADn.jpeg" alt="Fotografía Vocholín">
+                        <img src="img/Fotograf%C3%ADa/don.jpeg" alt="Fotografía don">
+                        <img src="img/Fotograf%C3%ADa/moto.jpeg" alt="Fotografía de una moto">
+                    </div>
                 </article>
 
                 <article id="modelado-3d" class="categoria-panel">
-                    <img src="img/Sword.png" alt="Muestra de modelado 3D">
                     <h2>Modelado 3D</h2>
                     <p>
                         Construyo objetos, personajes y escenarios desde
                         una perspectiva tridimensional, ampliando las
                         herramientas con las que desarrollo una idea.
                     </p>
+                    <div class="galeria-trabajos">
+                        <img src="img/Sword.png" alt="Modelo 3D de una espada">
+                    </div>
                 </article>
 
                 <article id="edicion-video" class="categoria-panel">
 
-                    <video
-                        class="video-muestra"
-                        controls
-                        poster="img/categoria-edicion-video.jpg">
+                    <video class="video-muestra" controls preload="metadata">
                         <source src="video/Video.mp4" type="video/mp4">
                         Tu navegador no soporta la reproducción de video.
                     </video>
@@ -427,9 +486,8 @@
 
             <h1>Contacto</h1>
 
-            <p>
-                Próximamente.
-            </p>
+            <p>¿Tienes un proyecto en mente? Cuéntame los detalles desde la página de contacto.</p>
+            <p><a class="enlace-contacto" href="AngelTraz/contacto.html">Ir al formulario de contacto</a></p>
 
         </div>
 
