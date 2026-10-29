@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+<main>
+    <h1>Let´s fucking pong</h1>
+
+    <section id="game-info">
+        <div>
+            <span>Player:</span>
+            <span id="player-score">0</span>
+        </div>
+
+        <div>
+            <span>CPU:</span>
+            <span id="cpu-score">0</span>
+        </div>
+
+        <div>
+            <span>Tries:</span>
+            <span id="tries">3</span>
+        </div>
+    </section>
+
+    <section id="game">
+        <canvas id="game-canvas">
+        </canvas>
+    </section>
+
+    <p id="game-message" aria-live="polite">
+        Press a key to start the game.
+    </p>
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>

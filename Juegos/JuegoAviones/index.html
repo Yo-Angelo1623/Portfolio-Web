@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#8f3b45">
+  <title>El escape de una vida pasada</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+    :root {
+      color-scheme: dark;
+      --ink: #e8e7dc;
+      --muted: #a3aaa0;
+      --panel: rgba(18, 27, 25, .86);
+      --line: rgba(225, 230, 208, .18);
+      --mint: #d0d4d6;
+      --red: #d35c50;
+      --gold: #efb83f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #19221f; }
+    body { color: var(--ink); font-family: 'DM Sans', sans-serif; }
+    #game { position: fixed; inset: 0; }
+    #game canvas { display: block; width: 100%; height: 100%; }
+    #landscape-stage { position: fixed; inset: 0; overflow: hidden; }
+    @media (orientation: portrait) {
+      #landscape-stage { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(90deg); }
+    }
+    .grain, .vignette { position: fixed; inset: 0; pointer-events: none; }
+    .grain { opacity: .11; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E"); mix-blend-mode: soft-light; }
+    .vignette { background: linear-gradient(180deg, rgba(14,19,18,.28), transparent 28%, transparent 68%, rgba(14,19,18,.48)); }
+    .hud { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 28px 22px; pointer-events: none; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .sigil { width: 35px; height: 35px; display: grid; place-items: center; border: 1px solid rgba(225,230,208,.44); color: var(--mint); font: 700 18px 'Barlow Condensed', sans-serif; transform: rotate(45deg); }
+    .sigil span { transform: rotate(-45deg); }
+    .brand-copy { line-height: 1.05; }
+    .brand-name { font: 700 16px 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+    .brand-sub { color: #aeb8ad; font-size: 9px; letter-spacing: 1.7px; text-transform: uppercase; margin-top: 4px; }
+    .mission { display: flex; align-items: center; gap: 9px; color: #cad0c4; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+    .mission:before { content: ''; width: 6px; height: 6px; background: var(--red); border-radius: 50%; box-shadow: 0 0 12px var(--red); }
+    .mission strong { color: var(--ink); font-weight: 600; }
+    .status { display: flex; gap: 18px; align-items: flex-start; }
+    .status-block { min-width: 142px; padding: 10px 12px 11px; border: 1px solid var(--line); background: rgba(18,27,25,.55); backdrop-filter: blur(8px); }
+      .status-block.weapon { min-width: 92px; }
+    .status-label { display: flex; justify-content: space-between; color: #b2b9af; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 8px; }
+      .status-label { gap: 7px; }
+      .status-block.weapon .status-label { display: block; margin-bottom: 0; }
+      .status-block.weapon .status-label strong { display: block; margin-top: 4px; }
+    .status-label strong { color: var(--ink); font-size: 10px; font-weight: 600; }
+      .map-panel { position: absolute; top: 112px; right: 28px; width: 152px; padding: 9px; border: 1px solid var(--line); background: rgba(18,27,25,.78); backdrop-filter: blur(8px); }
+      .map-heading { display: flex; justify-content: space-between; color: #b7c0b5; font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; margin: 0 2px 7px; }
+      .map-heading strong { color: var(--gold); font-weight: 600; }
+      #minimap { display: block; width: 132px; height: 132px; border: 1px solid rgba(225,230,208,.24); border-radius: 50%; }
+    .phase-toast { position: absolute; top: 22%; left: 50%; z-index: 2; min-width: 210px; padding: 10px 16px; border-left: 2px solid var(--mint); color: var(--ink); background: rgba(18,27,25,.82); opacity: 0; transform: translate(-50%, -8px); transition: opacity .22s ease, transform .22s ease; pointer-events: none; }
+    .phase-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    .phase-toast small { display: block; color: var(--mint); font-size: 9px; text-transform: uppercase; }
+    .phase-toast strong { display: block; margin-top: 3px; font: 700 18px 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+    .meter { height: 4px; background: rgba(232,231,220,.16); overflow: hidden; }
+    .meter span { display: block; height: 100%; width: 100%; background: var(--mint); transition: width .15s ease; }
+    #health-fill { background: var(--red); }
+    .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; }
+    .objective { display: flex; align-items: center; gap: 12px; color: #d5d8cd; font-size: 12px; }
+    .objective-mark { width: 30px; height: 30px; border: 1px solid rgba(210,183,124,.55); display: grid; place-items: center; color: var(--gold); font: 600 15px 'Barlow Condensed', sans-serif; }
+    .objective small { display: block; color: #aeb5aa; font-size: 9px; letter-spacing: 1.1px; text-transform: uppercase; margin-bottom: 3px; }
+    .controls { display: flex; align-items: center; gap: 12px; color: #d5d8cd; font-size: 10px; }
+    .key-group { display: flex; align-items: center; gap: 5px; }
+    kbd { min-width: 23px; height: 23px; display: inline-grid; place-items: center; padding: 0 5px; border: 1px solid rgba(229,233,218,.28); color: #f1f1e8; font: 600 10px 'DM Sans', sans-serif; background: rgba(16,22,20,.48); }
+    .control-name { color: #aeb5aa; margin-left: 3px; }
+    .overlay { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; padding: 22px; background: linear-gradient(90deg, rgba(14,20,18,.82), rgba(14,20,18,.34) 68%, rgba(14,20,18,.2)); transition: opacity .45s ease, visibility .45s ease; }
+    .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      #aim-reticle { position: fixed; z-index: 2; left: 50%; top: 50%; width: 34px; height: 34px; transform: translate(-50%, -50%); pointer-events: none; }
+      #aim-reticle:before, #aim-reticle:after { content: ''; position: absolute; background: rgba(239,244,226,.86); box-shadow: 0 0 5px rgba(22,30,25,.9); }
+      #aim-reticle:before { width: 1px; height: 9px; left: 16px; top: 0; box-shadow: 0 25px 5px rgba(22,30,25,.9); }
+      #aim-reticle:after { width: 9px; height: 1px; left: 0; top: 16px; box-shadow: 25px 0 5px rgba(22,30,25,.9); }
+      #aim-reticle span { position: absolute; inset: 8px; border: 1px solid rgba(239,244,226,.86); border-radius: 50%; box-shadow: 0 0 5px rgba(22,30,25,.9); }
+      #aim-reticle.locked span { border-color: var(--red); box-shadow: 0 0 7px var(--red); }
+      #aim-reticle.locked:before, #aim-reticle.locked:after { background: var(--red); }
+      #target-readout { position: fixed; z-index: 2; left: 50%; top: calc(50% + 22px); min-width: 118px; padding: 6px 8px; border: 1px solid rgba(231,141,114,.55); color: #e8e7dc; background: rgba(18,27,25,.82); font-size: 9px; opacity: 0; visibility: hidden; transform: translateX(20px); pointer-events: none; }
+      #target-readout.visible { opacity: 1; visibility: visible; }
+      .target-name { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .7px; }
+      .target-name strong { color: var(--red); }
+      .target-meter { height: 3px; background: rgba(232,231,220,.2); }
+      #target-health { display: block; width: 100%; height: 100%; background: var(--red); transition: width .14s ease; }
+    .flight-prompt { position: fixed; z-index: 2; top: calc(50% + 48px); left: 50%; padding: 6px 10px; border: 1px solid rgba(177,239,202,.5); color: var(--ink); background: rgba(18,27,25,.84); font-size: 10px; opacity: 0; transform: translateX(-50%); pointer-events: none; transition: opacity .15s ease; }
+    .flight-prompt.visible { opacity: 1; }
+    .ending-caption { position: absolute; left: 50%; bottom: 14%; z-index: 4; color: #fff0cc; font: 700 24px 'Barlow Condensed', sans-serif; text-align: center; text-transform: uppercase; opacity: 0; transform: translate(-50%, 8px); transition: opacity .8s ease, transform .8s ease; pointer-events: none; }
+    #landscape-stage.cinematic .hud, #landscape-stage.cinematic .touch-controls, #landscape-stage.cinematic .grain, #landscape-stage.cinematic .vignette, #landscape-stage.cinematic #aim-reticle, #landscape-stage.cinematic #target-readout, #landscape-stage.cinematic .phase-toast, #landscape-stage.cinematic .flight-prompt { opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility .6s ease; }
+    #landscape-stage.cinematic .ending-caption { opacity: 1; transform: translate(-50%, 0); }
+    .intro { width: min(100%, 470px); margin-right: auto; margin-left: max(3vw, 22px); animation: arrive .75s both; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--mint); font-size: 10px; font-weight: 600; letter-spacing: 2.4px; text-transform: uppercase; }
+    .eyebrow:before { content: ''; width: 24px; height: 1px; background: var(--mint); }
+    h1 { margin: 16px 0 7px; font: 800 clamp(50px, 8vw, 92px)/.82 'Barlow Condensed', sans-serif; letter-spacing: 0; text-transform: uppercase; }
+    h1 span { display: block; color: var(--mint); }
+    .subtitle { margin: 20px 0 0; color: #d4d6ca; font-size: 14px; line-height: 1.65; max-width: 390px; }
+    .briefing { display: flex; gap: 18px; margin: 26px 0 28px; padding-top: 15px; border-top: 1px solid var(--line); color: #aeb5aa; font-size: 10px; line-height: 1.5; }
+    .briefing div { flex: 1; }
+    .briefing b { display: block; color: #e2e3d9; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+    .start-button { display: flex; align-items: center; gap: 18px; min-height: 52px; padding: 0 19px; border: 0; color: #17201d; background: var(--mint); font: 700 12px 'DM Sans', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background .2s ease, transform .2s ease; }
+    .start-button:hover { background: #d0f5df; transform: translateY(-2px); }
+    .start-button span { font-size: 18px; }
+    .disclaimer { margin-top: 13px; color: #8f9990; font-size: 9px; letter-spacing: .5px; }
+    #end-overlay .intro { width: min(100%, 420px); }
+    #end-title { color: var(--red); }
+    #end-overlay.won #end-title { color: var(--mint); }
+    .touch-controls { display: none; position: absolute; inset: auto 14px 14px; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+    .touch-cluster { display: flex; gap: 7px; pointer-events: auto; }
+      .touch-cluster.movement { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); gap: 5px; }
+      .touch-cluster.movement [data-hold="w"] { grid-column: 2; grid-row: 1; }
+      .touch-cluster.movement [data-hold="a"] { grid-column: 1; grid-row: 2; }
+      .touch-cluster.movement [data-hold="s"] { grid-column: 2; grid-row: 2; }
+      .touch-cluster.movement [data-hold="d"] { grid-column: 3; grid-row: 2; }
+    .touch-button { width: 48px; height: 48px; border: 1px solid rgba(225,230,208,.35); color: #f0f0e7; background: rgba(16,22,20,.62); font: 700 15px 'DM Sans', sans-serif; touch-action: none; }
+    .touch-button.action { border-color: rgba(177,239,202,.65); color: var(--mint); }
+    @keyframes arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 760px) {
+      .hud { padding: 15px 14px 166px; }
+      .topbar { flex-wrap: wrap; gap: 12px; }
+      .mission { display: none; }
+      .status { gap: 7px; }
+      .status { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
+      .status-block { min-width: 102px; padding: 8px; }
+      .status-label { font-size: 8px; }
+      .touch-cluster { gap: 4px; }
+      .touch-button { width: 40px; height: 40px; }
+      .touch-cluster.movement { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(2, 40px); gap: 4px; }
+        .touch-cluster:not(.movement) { display: grid; grid-template-columns: repeat(3, 40px); grid-auto-rows: 40px; gap: 4px; }
+        .map-panel { top: 158px; right: 14px; width: 122px; padding: 7px; }
+        #minimap { width: 106px; height: 106px; }
+      .bottom { align-items: flex-end; }
+      .controls { display: none; }
+      .objective { font-size: 10px; }
+      .overlay { background: linear-gradient(90deg, rgba(14,20,18,.83), rgba(14,20,18,.45)); }
+      .intro { margin-left: 0; }
+      h1 { font-size: clamp(55px, 15vw, 82px); }
+      .subtitle { font-size: 13px; max-width: 340px; }
+      .briefing { gap: 10px; font-size: 9px; }
+      .touch-controls { display: flex; }
+    }
+    @media (max-width: 380px) {
+        .touch-cluster.movement { grid-template-columns: repeat(3, 32px); grid-template-rows: repeat(2, 32px); gap: 3px; }
+        .touch-button { width: 32px; height: 32px; font-size: 12px; }
+        .touch-cluster:not(.movement) { grid-template-columns: repeat(3, 32px); grid-auto-rows: 32px; gap: 3px; }
+        .map-panel { top: 158px; width: 110px; padding: 7px; }
+        #minimap { width: 94px; height: 94px; }
+      .status { gap: 7px; }
+      .status-block { min-width: 88px; padding: 8px 6px; }
+      .status-label { display: block; margin-bottom: 8px; }
+      .status-label strong { display: block; margin-top: 3px; }
+    }
+    @media (max-height: 560px) and (min-width: 761px) {
+      .overlay { place-items: start center; overflow: auto; }
+      .intro { margin: 22px auto; }
+      h1 { font-size: 64px; }
+      .briefing { margin: 14px 0; }
+      .hud { padding-top: 14px; padding-bottom: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="../../juegos.html" style="position: absolute; top: 16px; left: 16px; z-index: 9999; padding: 10px 14px; border: 1px solid rgba(225,230,208,.55); color: #e8e7dc; background: rgba(18,27,25,.92); font: 600 12px 'DM Sans', sans-serif; text-decoration: none;">Volver al Arcade</a>
+  <div id="landscape-stage">
+  <div id="game" aria-label="Escena tridimensional de combate y huida"></div>
+    <div id="aim-reticle" aria-hidden="true"><span></span></div>
+    <div id="target-readout" aria-hidden="true"><div class="target-name"><span id="target-type">Avión hostil</span><strong id="target-hp">24/24</strong></div><div class="target-meter"><span id="target-health"></span></div></div>
+  <div class="grain"></div><div class="vignette"></div>
+  <div class="hud" aria-hidden="true">
+    <div class="topbar">
+      <div class="brand"><div class="sigil"><span>E</span></div><div class="brand-copy"><div class="brand-name">El escape</div><div class="brand-sub">Una vida pasada · 1919</div></div></div>
+      <div class="mission"><strong>Operación ceniza</strong> / <span id="mission-phase">Bosque de ceniza</span></div>
+      <div class="status">
+        <div class="status-block"><div class="status-label">Integridad <strong id="health-value">100%</strong></div><div class="meter"><span id="health-fill"></span></div></div>
+        <div class="status-block"><div class="status-label">Reserva <strong id="energy-value">100%</strong></div><div class="meter"><span id="energy-fill"></span></div></div>
+        <div id="aircraft-status" class="status-block" hidden><div class="status-label">Avión <strong id="aircraft-value">100%</strong></div><div class="meter"><span id="aircraft-fill"></span></div></div>
+        <div class="status-block weapon"><div class="status-label">Arma <strong id="weapon-value">Pulso</strong></div></div>
+      </div>
+    </div>
+    <div class="map-panel"><div class="map-heading"><span>Vista</span><strong id="map-distance">1.5 km</strong></div><canvas id="minimap" width="144" height="144" aria-label="Minimapa orientado hacia la cámara con enemigos, aviones y objetivo"></canvas></div>
+    <div class="bottom">
+      <div class="objective"><div class="objective-mark" id="phase-mark">01</div><div><small>Fase <span id="phase-number">1/4</span> · <span id="distance">1.5 km</span></small><span id="phase-objective">Cruza el bosque de ceniza</span></div></div>
+      <div class="controls"><div class="key-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="control-name">mover</span></div><div class="key-group"><kbd>⇧</kbd><span class="control-name">correr</span></div><div class="key-group"><kbd>ESP</kbd><span class="control-name">salto</span></div><div class="key-group"><kbd>E</kbd><span class="control-name">atacar</span></div><div class="key-group"><kbd>F</kbd><span class="control-name">impacto aéreo</span></div><div class="key-group"><kbd>Q</kbd><span class="control-name">bajar del avión</span></div><div class="key-group"><kbd>1-3</kbd><span class="control-name">armas</span></div><div class="key-group"><kbd>RMB</kbd><span class="control-name">girar vista</span></div></div>
+    </div>
+  </div>
+  <div class="touch-controls" aria-label="Controles táctiles">
+    <div class="touch-cluster movement"><button class="touch-button" data-hold="w" aria-label="Avanzar">W</button><button class="touch-button" data-hold="a" aria-label="Mover a la izquierda">A</button><button class="touch-button" data-hold="s" aria-label="Retroceder">S</button><button class="touch-button" data-hold="d" aria-label="Mover a la derecha">D</button></div>
+    <div class="touch-cluster"><button class="touch-button" data-hold="space" aria-label="Saltar">ESP</button><button class="touch-button action" data-action="fire" aria-label="Atacar">✦</button><button class="touch-button action" data-action="dash" aria-label="Impulso">»</button><button class="touch-button action" data-action="special" aria-label="Impacto aéreo">✹</button><button class="touch-button action" data-action="hijack" aria-label="Bajar del avión">Q</button><button class="touch-button action" data-action="weapon" aria-label="Cambiar arma">⇄</button></div>
+  </div>
+  <section id="start-overlay" class="overlay">
+    <div class="intro">
+      <div class="eyebrow">Un fugitivo · una frontera</div>
+      <h1>El escape<span>de una vida pasada</span></h1>
+      <p class="subtitle">La guerra terminó. La persecución, no. Cruza el valle bajo el fuego de los aviones: esquiva, conserva fuerzas y decide cuándo devolver el golpe.</p>
+      <div class="briefing"><div><b>Vulnerable</b>Las balas dejan heridas. Los explosivos pueden acabarlo todo.</div><div><b>Adaptable</b>La energía se regenera despacio; cada arma la consume.</div></div>
+      <button id="start-button" class="start-button">Iniciar la huida <span>→</span></button>
+      <div class="disclaimer">WASD mover · MAYÚS correr · ESPACIO saltar · E atacar · salta y golpea un avión para tomarlo · en vuelo: A/D rumbo, W/S altura · MAYÚS turbo · Q para bajar</div>
+    </div>
+  </section>
+  <section id="end-overlay" class="overlay hidden">
+    <div class="intro"><div class="eyebrow">Operación ceniza</div><h1 id="end-title">Capturado<span>Fin de la huida</span></h1><p id="end-copy" class="subtitle">El valle se ha quedado en silencio.</p><button id="restart-button" class="start-button">Volver a intentarlo <span>↻</span></button></div>
+  </section>
+  <div id="phase-toast" class="phase-toast" aria-live="polite"><small id="toast-label">Fase 1</small><strong id="toast-title">Bosque de ceniza</strong></div>
+  <div id="flight-prompt" class="flight-prompt" aria-live="polite"></div>
+  <div id="ending-caption" class="ending-caption" aria-live="polite">El pasado queda atrás</div>
+  </div>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+    const mount = document.querySelector('#game');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#98474b');
+    scene.fog = new THREE.FogExp2('#98474b', 0.011);
+    const landscapeViewport = () => innerWidth < innerHeight
+      ? { width: innerHeight, height: innerWidth }
+      : { width: innerWidth, height: innerHeight };
+    const initialViewport = landscapeViewport();
+    const camera = new THREE.PerspectiveCamera(48, initialViewport.width / initialViewport.height, 0.1, 180);
+    camera.position.set(0, 10, 15);
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const aimReticle = document.querySelector('#aim-reticle');
+      const targetReadout = document.querySelector('#target-readout');
+      const targetHealth = document.querySelector('#target-health');
+      const targetHp = document.querySelector('#target-hp');
+      const targetType = document.querySelector('#target-type');
+    let cameraYaw = 0;
+    let cameraPitch = .52;
+    let cameraDrag = null;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+    renderer.setSize(initialViewport.width, initialViewport.height);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = .98;
+    mount.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight('#dce0e4', '#34363a', 1.7));
+    const sun = new THREE.DirectionalLight('#d4d8dc', 2.25);
+    sun.position.set(-12, 22, 8);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight('#b66b59', .72);
+    fill.position.set(10, 8, -15);
+    scene.add(fill);
+
+    const mats = {
+      earth: new THREE.MeshStandardMaterial({ color: '#45494c', roughness: 1 }),
+      path: new THREE.MeshStandardMaterial({ color: '#5c5b5c', roughness: 1 }),
+      stone: new THREE.MeshStandardMaterial({ color: '#747476', roughness: 1 }),
+      darkStone: new THREE.MeshStandardMaterial({ color: '#303236', roughness: 1 }),
+      trunk: new THREE.MeshStandardMaterial({ color: '#403b3a', roughness: 1 }),
+      pine: new THREE.MeshStandardMaterial({ color: '#414446', roughness: 1 }),
+      burntLeaf: new THREE.MeshStandardMaterial({ color: '#79423d', roughness: 1 }),
+      ashLeaf: new THREE.MeshStandardMaterial({ color: '#77736d', roughness: 1 }),
+      uniform: new THREE.MeshStandardMaterial({ color: '#343c37', roughness: .82 }),
+      cloak: new THREE.MeshStandardMaterial({ color: '#202a27', roughness: .72 }),
+      skin: new THREE.MeshStandardMaterial({ color: '#bb9779', roughness: .9 }),
+      metal: new THREE.MeshStandardMaterial({ color: '#454c48', metalness: .68, roughness: .35 }),
+      plane: new THREE.MeshStandardMaterial({ color: '#696a6b', roughness: .72, metalness: .12 }),
+      red: new THREE.MeshStandardMaterial({ color: '#963c35', roughness: .8 }),
+      energy: new THREE.MeshStandardMaterial({ color: '#ffd45b', emissive: '#ff9f1c', emissiveIntensity: 2.8, roughness: .25 }),
+      enemyEnergy: new THREE.MeshStandardMaterial({ color: '#ff8a32', emissive: '#ff3b19', emissiveIntensity: 2.4 }),
+      glass: new THREE.MeshStandardMaterial({ color: '#303d3c', metalness: .3, roughness: .2 })
+    };
+
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 2000), mats.earth);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(0, -.08, -950);
+    scene.add(ground);
+    for (let index = 0; index < 18; index++) {
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(14, 120), mats.path);
+      road.rotation.x = -Math.PI / 2; road.rotation.z = Math.sin(index * .52) * .04;
+      road.position.set(Math.sin(index * .52) * 22, -.04, -40 - index * 100); scene.add(road);
+    }
+
+    function box(parent, x, y, z, sx, sy, sz, material, rx = 0, ry = 0, rz = 0) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+      mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz); parent.add(mesh); return mesh;
+    }
+    function addRuin(x, z) {
+      const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
+      box(group, 0, .72, 0, 3.2, 1.45, 2.5, mats.stone, 0, Math.random() * .3, .06);
+      box(group, -.65, 1.8, -.2, 1.5, 1.4, 2.2, mats.darkStone, .02, .13, -.04);
+      box(group, 1.25, 1.25, -.6, .38, 2.4, 1.1, mats.stone, .02, -.1, .05);
+      box(group, .15, 2.25, .4, 2.1, .28, .4, mats.darkStone, 0, .05, -.18);
+      obstacles.push({ x, z, radius: 2.2, height: 3.6 });
+      return group;
+    }
+    function addTree(x, z) {
+      const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
+      const lean = (Math.random() - .5) * .25;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.13, .22, 3.2, 6), mats.trunk);
+      trunk.position.y = 1.6; trunk.rotation.z = lean; group.add(trunk);
+      for (let tier = 0; tier < 3; tier++) {
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(1.2 - tier * .23, 2.1, 7), mats.pine);
+        crown.position.set(lean * (tier + 1), 2.35 + tier * .85, 0); group.add(crown);
+      }
+      obstacles.push({ x, z, radius: .85, height: 7 });
+      return group;
+    }
+    function addRock(x, z, scale = 1) {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), Math.random() > .5 ? mats.stone : mats.darkStone);
+      rock.position.set(x, .4 * scale, z); rock.scale.set(1.1 * scale, .7 * scale, .8 * scale); rock.rotation.set(Math.random(), Math.random(), Math.random() * .25); scene.add(rock);
+      obstacles.push({ x, z, radius: scale * .9, height: scale * 1.4 });
+      return rock;
+    }
+    function addShrub(x, z) {
+      const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
+      const material = Math.random() > .42 ? mats.burntLeaf : mats.ashLeaf;
+      for (let index = 0; index < 3; index++) {
+        const cluster = new THREE.Mesh(new THREE.DodecahedronGeometry(.62 + Math.random() * .24, 0), material);
+        cluster.position.set((index - 1) * .48, .34 + Math.random() * .25, (Math.random() - .5) * .4);
+        cluster.scale.y = .72; group.add(cluster);
+      }
+      obstacles.push({ x, z, radius: 1.1, height: 1.2 });
+      return group;
+    }
+    const obstacles = [];
+    const mountains = [];
+    const craterZones = [];
+    function addMountain(x, z, radius) {
+      const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
+      const peak = new THREE.Mesh(new THREE.ConeGeometry(radius, radius * 1.35, 7), mats.darkStone);
+      peak.position.y = radius * .58; group.add(peak);
+      const shoulder = new THREE.Mesh(new THREE.ConeGeometry(radius * .62, radius * .92, 7), mats.stone);
+      shoulder.position.set(radius * .45, radius * .42, radius * .28); group.add(shoulder);
+      obstacles.push({ x, z, radius: radius * .76, height: radius * 1.35 });
+      mountains.push({ x, z, radius });
+      return group;
+    }
+    function addCrater(x, z, radius) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(radius * .68, .55, 7, 24), mats.darkStone);
+      rim.rotation.x = -Math.PI / 2; rim.position.set(x, .02, z); scene.add(rim);
+      const center = new THREE.Mesh(new THREE.CircleGeometry(radius * .65, 20), mats.darkStone);
+      center.rotation.x = -Math.PI / 2; center.position.set(x, -.025, z); scene.add(center);
+      craterZones.push({ x, z, radius });
+    }
+    const scenery = [];
+    for (let i = 0; i < 212; i++) {
+      const z = -30 - i * 8.5;
+      if (i % 15 === 2) scenery.push(addRuin((Math.random() > .5 ? 1 : -1) * (8 + Math.random() * 15), z));
+      if (i % 4 !== 1) scenery.push(addTree((Math.random() > .5 ? 1 : -1) * (10 + Math.random() * 20), z + Math.random() * 2));
+      if (i % 3 === 1) scenery.push(addRock((Math.random() > .5 ? 1 : -1) * (5 + Math.random() * 10), z + 1, .6 + Math.random() * .9));
+      if (i % 3 === 0) {
+        scenery.push(addShrub(-8 - Math.random() * 7, z + Math.random() * 3));
+        scenery.push(addShrub(8 + Math.random() * 7, z + Math.random() * 3));
+      }
+    }
+    const farRidges = [];
+    for (let index = 0; index < 16; index++) {
+      const z = -105 - index * 112;
+      const x = (index % 2 ? 1 : -1) * (42 + (index % 3) * 12);
+      scenery.push(addMountain(x, z, 12 + (index % 3) * 2));
+      addCrater(-x * .45, z - 28, 4 + index % 3);
+      for (let tree = 0; tree < 9; tree++) {
+        const angle = tree * Math.PI * 2 / 9;
+        scenery.push(addTree(x * .42 + Math.cos(angle) * 7, z + 38 + Math.sin(angle) * 7));
+      }
+    }
+    for (let side of [-1, 1]) {
+      const ridge = new THREE.Mesh(new THREE.ConeGeometry(31, 19, 8), mats.darkStone);
+      ridge.position.set(side * 34, 7, -70); ridge.rotation.y = Math.PI / 8; scene.add(ridge); farRidges.push(ridge);
+      mountains.push({ x: side * 34, z: -70, radius: 31 });
+      obstacles.push({ x: side * 34, z: -70, radius: 31, height: 19 });
+      const ridge2 = new THREE.Mesh(new THREE.ConeGeometry(22, 14, 7), mats.stone);
+      ridge2.position.set(side * 49, 4, -64); ridge2.rotation.y = Math.PI / 10; scene.add(ridge2); farRidges.push(ridge2);
+      mountains.push({ x: side * 49, z: -64, radius: 22 });
+      obstacles.push({ x: side * 49, z: -64, radius: 22, height: 14 });
+    }
+
+    const player = new THREE.Group(); scene.add(player);
+    const shadow = new THREE.Mesh(new THREE.CircleGeometry(.8, 18), new THREE.MeshBasicMaterial({ color: '#171b17', transparent: true, opacity: .42 }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = .025; player.add(shadow);
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.34, .72, 4, 7), mats.uniform);
+    torso.position.y = 1.03; torso.rotation.x = -.08; player.add(torso);
+    const cloak = new THREE.Mesh(new THREE.ConeGeometry(.48, 1.35, 6), mats.cloak);
+    cloak.position.set(0, .9, .38); cloak.rotation.x = -.18; player.add(cloak);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.27, 12, 9), mats.skin);
+    head.position.set(0, 1.82, -.04); player.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(.28, 10, 7, 0, Math.PI * 2, 0, Math.PI * .54), mats.cloak);
+    hair.position.copy(head.position); hair.position.y += .06; player.add(hair);
+    const chestLight = new THREE.Mesh(new THREE.OctahedronGeometry(.13, 0), mats.energy);
+    chestLight.position.set(0, 1.12, -.31); player.add(chestLight);
+    const limbs = [];
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(.11, .48, 3, 5), mats.uniform);
+      arm.position.set(side * .43, 1.04, -.02); arm.rotation.z = side * -.22; player.add(arm); limbs.push(arm);
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.14, .42, 3, 5), mats.cloak);
+      leg.position.set(side * .19, .38, 0); player.add(leg); limbs.push(leg);
+    }
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(.105, 1.9, 6), mats.energy);
+    blade.position.set(.72, .95, -.72); blade.rotation.x = Math.PI / 2; blade.rotation.z = -.18; blade.visible = false; player.add(blade);
+    const spear = new THREE.Group();
+    const spearShaft = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, 2.1, 6), mats.energy);
+    spearShaft.rotation.x = Math.PI / 2; spear.add(spearShaft);
+    const spearTip = new THREE.Mesh(new THREE.ConeGeometry(.13, .48, 6), mats.energy);
+    spearTip.rotation.x = -Math.PI / 2; spearTip.position.z = -.98; spear.add(spearTip);
+    spear.position.set(-.72, .95, -.72); spear.visible = false; player.add(spear);
+
+    function makePlane() {
+      const group = new THREE.Group();
+      const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(.2, .29, 3.5, 8), mats.plane);
+      fuselage.rotation.x = Math.PI / 2; group.add(fuselage);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(.24, .8, 8), mats.metal);
+      nose.rotation.x = -Math.PI / 2; nose.position.z = -2.05; group.add(nose);
+      box(group, 0, .08, -.1, 4.4, .13, .78, mats.red, 0, 0, -.02);
+      box(group, 0, .64, .12, 2.7, .12, .61, mats.plane);
+      box(group, 0, .4, 1.28, 1.45, .12, .56, mats.plane);
+      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(.35, 10, 8), mats.glass);
+      cockpit.position.set(0, .38, -.65); cockpit.scale.set(.72, .55, 1.25); group.add(cockpit);
+      const pilot = new THREE.Group();
+      const pilotBody = new THREE.Mesh(new THREE.CapsuleGeometry(.13, .24, 3, 5), mats.red);
+      pilotBody.position.y = .34; pilot.add(pilotBody);
+      const pilotHead = new THREE.Mesh(new THREE.SphereGeometry(.14, 8, 6), mats.skin);
+      pilotHead.position.y = .66; pilot.add(pilotHead);
+      const parachute = new THREE.Mesh(new THREE.SphereGeometry(.58, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2), mats.energy);
+      parachute.position.y = 1.45; parachute.visible = false; pilot.add(parachute);
+      pilot.position.set(0, .18, -.58); pilot.scale.setScalar(.62); pilot.userData.parachute = parachute; group.add(pilot);
+      const prop = new THREE.Group(); prop.position.z = -2.43;
+      box(prop, 0, 0, 0, .12, 1.1, .07, mats.metal);
+      group.add(prop); group.userData.prop = prop; group.userData.pilot = pilot;
+      return group;
+    }
+    const planes = [];
+    for (let i = 0; i < 8; i++) {
+      const baseX = (i % 4 - 1.5) * 30;
+      const plane = makePlane(); plane.position.set(baseX, 8.5 + (i % 2) * 1.2, -24 - Math.floor(i / 4) * 48 - (i % 4) * 8); plane.rotation.y = (i % 4 - 1.5) * .08; scene.add(plane);
+      const role = i % 4 === 2 ? 'kamikaze' : 'fighter';
+      if (role === 'kamikaze') {
+        const beacon = new THREE.Mesh(new THREE.SphereGeometry(.25, 8, 6), mats.enemyEnergy);
+        beacon.position.set(0, -.45, .7); plane.add(beacon); plane.userData.beacon = beacon;
+      }
+      const maxHp = role === 'kamikaze' ? 8 : 12;
+      plane.userData = { ...plane.userData, role, phase: Math.random() * 6, cooldown: 1 + Math.random() * 1.2, baseX, baseAltitude: [7.5, 12.5, 10][i % 3], maneuver: i % 3, speed: role === 'kamikaze' ? 9 : 5 + Math.random() * 3, hp: maxHp, maxHp, alive: true, respawn: 0, burstRemaining: 0, collisionCooldown: 0, mode: 'gun' };
+      planes.push(plane);
+    }
+    let targetedPlane = null;
+    function updateAim() {
+      camera.updateMatrixWorld(true);
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(planes.filter(plane => plane.userData.alive && plane !== pilotedPlane), true);
+      targetedPlane = null;
+      if (hits.length) {
+        let object = hits[0].object;
+        while (object && !planes.includes(object)) object = object.parent;
+        if (object?.userData.alive) targetedPlane = object;
+      }
+      if (!targetedPlane) {
+        let closest = .13;
+        for (const plane of planes) {
+          if (!plane.userData.alive || plane === pilotedPlane) continue;
+          plane.updateWorldMatrix(true, false);
+          const projected = plane.position.clone().project(camera);
+          if (projected.z < -1 || projected.z > 1) continue;
+          const gap = Math.hypot(projected.x - pointer.x, projected.y - pointer.y);
+          if (gap < closest) { closest = gap; targetedPlane = plane; }
+        }
+      }
+      aimReticle.classList.toggle('locked', Boolean(targetedPlane));
+          targetReadout.classList.toggle('visible', Boolean(targetedPlane));
+          if (targetedPlane) {
+            targetType.textContent = targetedPlane.userData.role === 'kamikaze' ? 'Kamikaze' : 'Avión hostil';
+            targetHealth.style.width = `${Math.max(0, targetedPlane.userData.hp) / targetedPlane.userData.maxHp * 100}%`;
+            targetHp.textContent = `${Math.max(0, targetedPlane.userData.hp)}/${targetedPlane.userData.maxHp}`;
+          }
+    }
+    function moveAim(event) {
+      const point = stagePoint(event), viewport = landscapeViewport();
+      pointer.x = point.x / viewport.width * 2 - 1;
+      pointer.y = -(point.y / viewport.height) * 2 + 1;
+      aimReticle.style.left = `${point.x}px`; aimReticle.style.top = `${point.y}px`;
+      updateAim();
+    }
+    function stagePoint(event) {
+      return innerWidth < innerHeight
+        ? { x: event.clientY, y: innerWidth - event.clientX }
+        : { x: event.clientX, y: event.clientY };
+    }
+    function makeSoldier(x, z, melee = false) {
+      const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(.27, .56, 3, 6), mats.red); body.position.y = .8; group.add(body);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(.27, 10, 7), mats.metal); helmet.position.y = 1.42; group.add(helmet);
+      if (melee) {
+        const bayonet = new THREE.Mesh(new THREE.ConeGeometry(.085, .86, 4), mats.metal);
+        bayonet.position.set(.43, .96, -.18); bayonet.rotation.z = -.48; group.add(bayonet);
+      } else {
+        box(group, .33, 1.04, -.1, .68, .09, .12, mats.metal, 0, -.14, .1);
+      }
+      const shadow = new THREE.Mesh(new THREE.CircleGeometry(.43, 12), new THREE.MeshBasicMaterial({ color: '#151914', transparent: true, opacity: .4 }));
+      shadow.rotation.x = -Math.PI / 2; shadow.position.y = .025; group.add(shadow);
+      group.userData = { cooldown: 1 + Math.random() * 2, alive: true, mode: melee ? 'melee' : 'rifle' };
+      return group;
+    }
+    const soldiers = [];
+    const camps = [[-30, -225], [38, -600], [-38, -975], [32, -1350]];
+    camps.forEach(([centerX, centerZ], campIndex) => {
+      addRuin(centerX, centerZ);
+      for (let index = 0; index < 9; index++) {
+        const angle = index * Math.PI * 2 / 9;
+        const radius = index % 2 ? 5.5 : 8;
+        const melee = index === 2 || index === 6;
+        soldiers.push(makeSoldier(centerX + Math.cos(angle) * radius, centerZ + Math.sin(angle) * radius, melee));
+      }
+      const cover = box(scene, centerX + (campIndex % 2 ? -10 : 10), .55, centerZ + 2, 2.4, 1.1, 1.2, mats.darkStone);
+      obstacles.push({ x: cover.position.x, z: cover.position.z, radius: 1.6, height: 1.1 });
+    });
+    const projectiles = [];
+    const ejectedPilots = [];
+        function projectile(x, y, z, friendly, vx = 0, vy = 0, vz = -1, kind = 'pulse', target = null) {
+      const geometry = friendly && kind === 'spear' ? new THREE.ConeGeometry(.09, 1.8, 6) : new THREE.SphereGeometry(friendly ? .16 : .22, 10, 8);
+      const mesh = new THREE.Mesh(geometry, friendly ? mats.energy : mats.enemyEnergy);
+      if (friendly && kind === 'spear') mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(x, y, z); scene.add(mesh);
+      projectiles.push({ mesh, friendly, vx, vy, vz, kind, target, life: 4, hitTargets: new Set() });
+    }
+    const keys = new Set();
+    const phases = [
+      { name: 'Bosque de ceniza', objective: 'Cruza el bosque de ceniza' },
+      { name: 'Ruinas del valle', objective: 'Supera las ruinas del valle' },
+      { name: 'Línea de fuego', objective: 'Rompe la línea de fuego' },
+      { name: 'La frontera', objective: 'Cruza el arco y deja atrás el valle' }
+    ];
+    let health = 100, energy = 100, playing = false, weapon = 'pulse', jumpV = 0, grounded = true, invulnerable = 0, pilotedPlane = null;
+    let aircraftDropHeight = 0;
+    let fireCooldown = 0, dashCooldown = 0, dashTime = 0, specialCooldown = 0, meleeSwing = 0, impactShake = 0;
+    const GOAL_DISTANCE = 1500;
+    const PHASE_LENGTH = GOAL_DISTANCE / phases.length;
+    const goalGate = new THREE.Group(); goalGate.position.set(0, 0, -GOAL_DISTANCE + 24); scene.add(goalGate);
+    box(goalGate, -7, 3.5, 0, .55, 7, .7, mats.metal);
+    box(goalGate, 7, 3.5, 0, .55, 7, .7, mats.metal);
+    box(goalGate, 0, 7, 0, 14.5, .5, .85, mats.energy);
+    const goalLight = new THREE.PointLight('#ffb930', 8, 34); goalLight.position.set(0, 6, 0); goalGate.add(goalLight);
+    let elapsed = 0, progress = 0, distance = GOAL_DISTANCE, kills = 0, activePhase = -1, phaseToastTimer = 0;
+    let ending = null;
+    const impactWaves = [];
+    const clock = new THREE.Clock();
+    const healthFill = document.querySelector('#health-fill'), energyFill = document.querySelector('#energy-fill');
+    const aircraftStatus = document.querySelector('#aircraft-status');
+    const aircraftValue = document.querySelector('#aircraft-value');
+    const aircraftFill = document.querySelector('#aircraft-fill');
+    const phaseMark = document.querySelector('#phase-mark');
+    const phaseNumber = document.querySelector('#phase-number');
+    const phaseObjective = document.querySelector('#phase-objective');
+    const missionPhase = document.querySelector('#mission-phase');
+    const phaseToast = document.querySelector('#phase-toast');
+    const toastLabel = document.querySelector('#toast-label');
+    const toastTitle = document.querySelector('#toast-title');
+    const flightPrompt = document.querySelector('#flight-prompt');
+    const endingCaption = document.querySelector('#ending-caption');
+    const landscapeStage = document.querySelector('#landscape-stage');
+    const mapCanvas = document.querySelector('#minimap');
+    const mapContext = mapCanvas.getContext('2d');
+    function drawMinimap() {
+      const size = mapCanvas.width;
+      const center = size / 2;
+      const radius = center - 7;
+      const scale = (radius - 12) / 150;
+      mapContext.clearRect(0, 0, size, size);
+      mapContext.save();
+      mapContext.beginPath(); mapContext.arc(center, center, radius, 0, Math.PI * 2); mapContext.clip();
+      mapContext.fillStyle = '#26342e'; mapContext.fillRect(0, 0, size, size);
+      mapContext.strokeStyle = 'rgba(203,220,200,.12)'; mapContext.lineWidth = 1;
+      mapContext.save(); mapContext.translate(center, center); mapContext.rotate(cameraYaw);
+      for (let offset = -2; offset <= 2; offset++) {
+        mapContext.beginPath(); mapContext.moveTo(offset * 28, -center); mapContext.lineTo(offset * 28, center); mapContext.stroke();
+        mapContext.beginPath(); mapContext.moveTo(-center, offset * 28); mapContext.lineTo(center, offset * 28); mapContext.stroke();
+      }
+      mapContext.restore();
+      mapContext.setLineDash([5, 5]); mapContext.strokeStyle = '#a19c7d'; mapContext.lineWidth = 5;
+      const mapPoint = (x, z) => {
+        const dx = x - player.position.x, dz = z - player.position.z;
+        return { x: center + (dx * Math.cos(cameraYaw) - dz * Math.sin(cameraYaw)) * scale, y: center + (dx * Math.sin(cameraYaw) + dz * Math.cos(cameraYaw)) * scale };
+      };
+      const routeStart = mapPoint(0, player.position.z - 160), routeEnd = mapPoint(0, player.position.z + 160);
+      mapContext.beginPath(); mapContext.moveTo(routeStart.x, routeStart.y); mapContext.lineTo(routeEnd.x, routeEnd.y); mapContext.stroke(); mapContext.setLineDash([]);
+      const drawMarker = (x, z, color, markerSize) => {
+        const point = mapPoint(x, z);
+        if (Math.hypot(point.x - center, point.y - center) > radius - 4) return;
+        mapContext.fillStyle = color; mapContext.beginPath(); mapContext.arc(point.x, point.y, markerSize, 0, Math.PI * 2); mapContext.fill();
+      };
+      soldiers.forEach(enemy => { if (enemy.userData.alive) drawMarker(enemy.position.x, enemy.position.z, '#e78d72', 3); });
+      planes.forEach(plane => { if (plane.userData.alive) drawMarker(plane.position.x, plane.position.z, '#d2b77c', 3); });
+      const target = mapPoint(0, -GOAL_DISTANCE);
+      const targetAngle = Math.atan2(target.x - center, center - target.y);
+      const targetX = center + Math.sin(targetAngle) * (radius - 10);
+      const targetY = center - Math.cos(targetAngle) * (radius - 10);
+      mapContext.save(); mapContext.translate(targetX, targetY); mapContext.rotate(targetAngle);
+      mapContext.fillStyle = '#f0d58f'; mapContext.beginPath(); mapContext.moveTo(0, -7); mapContext.lineTo(-5, 5); mapContext.lineTo(5, 5); mapContext.closePath(); mapContext.fill(); mapContext.restore();
+      mapContext.save(); mapContext.translate(center, center); mapContext.fillStyle = '#b1efca';
+      mapContext.beginPath(); mapContext.moveTo(0, -8); mapContext.lineTo(-5, 5); mapContext.lineTo(0, 2); mapContext.lineTo(5, 5); mapContext.closePath(); mapContext.fill(); mapContext.restore();
+      mapContext.restore();
+      mapContext.strokeStyle = 'rgba(225,230,208,.42)'; mapContext.lineWidth = 1.5;
+      mapContext.beginPath(); mapContext.arc(center, center, radius, 0, Math.PI * 2); mapContext.stroke();
+    }
+    function updateHud() {
+      healthFill.style.width = `${health}%`; energyFill.style.width = `${energy}%`;
+      aircraftStatus.hidden = !pilotedPlane;
+      if (pilotedPlane) {
+        const aircraftHealth = Math.max(0, pilotedPlane.userData.hp) / pilotedPlane.userData.maxHp * 100;
+        aircraftValue.textContent = `${Math.ceil(aircraftHealth)}%`;
+        aircraftFill.style.width = `${aircraftHealth}%`;
+      }
+      const phaseIndex = Math.min(phases.length - 1, Math.floor(progress / PHASE_LENGTH));
+      const phase = phases[phaseIndex];
+      if (phaseIndex !== activePhase) {
+        activePhase = phaseIndex;
+        toastLabel.textContent = `Fase ${phaseIndex + 1}`;
+        toastTitle.textContent = phase.name;
+        phaseToast.classList.add('visible');
+        clearTimeout(phaseToastTimer);
+        phaseToastTimer = setTimeout(() => phaseToast.classList.remove('visible'), 2100);
+      }
+      phaseMark.textContent = String(phaseIndex + 1).padStart(2, '0');
+      phaseNumber.textContent = `${phaseIndex + 1}/${phases.length}`;
+      phaseObjective.textContent = phase.objective;
+      missionPhase.textContent = phase.name;
+      document.querySelector('#health-value').textContent = `${Math.ceil(health)}%`;
+      document.querySelector('#energy-value').textContent = `${Math.floor(energy)}%`;
+      document.querySelector('#weapon-value').textContent = weapon === 'pulse' ? 'Pulso' : weapon === 'blade' ? 'Hoja' : 'Lanza';
+      const nearestPlane = planes.filter(plane => plane.userData.alive && !plane.userData.piloted)
+        .sort((first, second) => first.position.distanceTo(player.position) - second.position.distanceTo(player.position))[0];
+      const planeDistance = nearestPlane?.position.distanceTo(player.position) ?? Infinity;
+      const aircraftCanLand = pilotedPlane && pilotedPlane.position.y <= 1.35 && pilotedPlane.userData.flightSpeed < 8;
+      const flightControls = `A/D rumbo · W/S altura · MAYÚS turbo · Q · ${aircraftCanLand ? 'bajar con seguridad' : 'saltar con daño'}`;
+      const prompt = pilotedPlane ? flightControls : planeDistance < 24
+        ? !grounded && planeDistance < 9.5 ? 'E · expulsar al piloto' : grounded ? 'Salta y ataca para tomar el avión' : 'Acércate y golpea al piloto'
+        : '';
+      flightPrompt.textContent = prompt;
+      flightPrompt.classList.toggle('visible', Boolean(prompt));
+      document.querySelector('#distance').textContent = `${(distance / 1000).toFixed(1)} km`;
+      document.querySelector('#map-distance').textContent = `${(distance / 1000).toFixed(1)} km`;
+      drawMinimap();
+    }
+    function cycleWeapon() {
+      weapon = ({ pulse: 'blade', blade: 'spear', spear: 'pulse' })[weapon];
+      updateHud();
+    }
+    function activateWeapon(selectedWeapon) {
+      weapon = selectedWeapon;
+      fireCooldown = 0;
+      fire();
+    }
+    function hit(amount) {
+      if (invulnerable > 0 || !playing) return;
+      health = Math.max(0, health - amount); invulnerable = .72; updateHud();
+      player.children.forEach(part => { if (part.material === mats.uniform || part.material === mats.cloak) part.material = mats.red; });
+      setTimeout(() => player.children.forEach(part => { if (part.material === mats.red) part.material = part.geometry.type === 'CapsuleGeometry' ? mats.uniform : mats.cloak; }), 180);
+      if (health <= 0) finish(false);
+    }
+    function fire() {
+      if (!playing || fireCooldown > 0) return;
+      if (!pilotedPlane && !grounded) {
+        const nearbyAircraft = planes.filter(plane => plane.userData.alive && !plane.userData.piloted)
+          .sort((first, second) => first.position.distanceTo(player.position) - second.position.distanceTo(player.position))[0];
+        if (nearbyAircraft && hijackAircraft(nearbyAircraft)) return;
+      }
+      updateAim();
+      const origin = new THREE.Vector3(player.position.x, 1.17 + player.position.y, player.position.z - .7);
+      const direction = targetedPlane ? targetedPlane.position.clone().add(new THREE.Vector3(0, .2, 0)).sub(origin).normalize() : raycaster.ray.direction.clone().normalize();
+      if (weapon === 'pulse') {
+        if (energy < 6) return;
+        energy -= 6; fireCooldown = .14; projectile(origin.x, origin.y, origin.z, true, direction.x * 48, direction.y * 48, direction.z * 48, 'pulse', targetedPlane);
+      } else if (weapon === 'blade') {
+        if (energy < 12) return;
+        energy -= 12; fireCooldown = .34; blade.visible = true; blade.rotation.z = -.9; meleeSwing = .24;
+        const comboReach = 3.4 + (kills % 3) * .25;
+        const facingX = -Math.sin(player.rotation.y), facingZ = -Math.cos(player.rotation.y);
+        for (const enemy of soldiers) {
+          if (!enemy.userData.alive) continue;
+          const dx = enemy.position.x - player.position.x, dz = enemy.position.z - player.position.z;
+          const enemyDistance = Math.hypot(dx, dz) || 1;
+          const facingDot = (dx * facingX + dz * facingZ) / enemyDistance;
+          if (enemyDistance < comboReach && facingDot > .25) killSoldier(enemy);
+        }
+      } else {
+        if (energy < 18) return;
+        energy -= 18; fireCooldown = .48; spear.visible = true;
+        setTimeout(() => { spear.visible = false; }, 260);
+        projectile(origin.x, origin.y, origin.z, true, direction.x * 56, direction.y * 56, direction.z * 56, 'spear', targetedPlane);
+      }
+      updateHud();
+    }
+    function specialStrike() {
+      if (!playing || specialCooldown > 0 || energy < 35) return;
+      updateAim();
+      const target = targetedPlane || planes.filter(plane => plane.userData.alive && plane !== pilotedPlane && plane.position.z < player.position.z + 15)
+        .sort((first, second) => first.position.distanceTo(player.position) - second.position.distanceTo(player.position))[0];
+      if (!target) return;
+      energy -= 35; specialCooldown = 7;
+      const flash = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), mats.energy);
+      flash.position.copy(target.position); flash.scale.setScalar(1.8); scene.add(flash);
+      setTimeout(() => scene.remove(flash), 240);
+      damagePlane(target, target.userData.hp);
+      updateHud();
+    }
+    function toggleAircraft() {
+      if (!pilotedPlane) return;
+      const aircraft = pilotedPlane;
+      const safeLanding = aircraft.position.y <= 1.35 && aircraft.userData.flightSpeed < 8;
+      aircraft.userData.piloted = false;
+      if (safeLanding) {
+        player.position.set(aircraft.position.x + Math.sin(aircraft.userData.heading) * 2, 0, aircraft.position.z + Math.cos(aircraft.userData.heading) * 2);
+        aircraftDropHeight = 0; grounded = true; jumpV = 0;
+      } else {
+        player.position.set(aircraft.position.x, Math.max(.5, aircraft.position.y - .8), aircraft.position.z);
+        aircraftDropHeight = player.position.y; grounded = false; jumpV = 0;
+      }
+      player.visible = true; pilotedPlane = null;
+      impactShake = safeLanding ? 0 : .3;
+      updateHud();
+    }
+    function hijackAircraft(aircraft) {
+      if (!aircraft || grounded || player.position.y < 1 || !aircraft.userData.alive || aircraft.userData.piloted || aircraft.position.distanceTo(player.position) > 9.5) return false;
+      const ejectedPilot = aircraft.userData.pilot;
+      aircraft.updateMatrixWorld(true); scene.attach(ejectedPilot);
+      ejectedPilot.position.y += .5; ejectedPilot.userData.parachute.visible = true;
+      ejectedPilots.push({ mesh: ejectedPilot, velocity: new THREE.Vector3(0, 5, 0), life: 5 });
+      pilotedPlane = aircraft; aircraft.userData.piloted = true;
+      aircraft.userData.heading = aircraft.rotation.y; aircraft.userData.flightSpeed = 24; aircraft.userData.verticalSpeed = 0;
+      player.position.set(aircraft.position.x, aircraft.position.y - 1, aircraft.position.z);
+      player.visible = false; grounded = false; jumpV = 0; cameraYaw = aircraft.userData.heading;
+      aircraft.userData.landed = false; aircraft.userData.mountainCooldown = 0;
+      impactShake = .45;
+      toastLabel.textContent = 'AERONAVE CAPTURADA'; toastTitle.textContent = 'Cabina tomada';
+      phaseToast.classList.add('visible'); clearTimeout(phaseToastTimer);
+      phaseToastTimer = setTimeout(() => phaseToast.classList.remove('visible'), 1900);
+      const captureFlash = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), mats.energy);
+      captureFlash.position.copy(aircraft.position); captureFlash.scale.setScalar(2.2); scene.add(captureFlash);
+      setTimeout(() => scene.remove(captureFlash), 300);
+      updateHud();
+      return true;
+    }
+    function groundImpact() {
+      impactShake = .35;
+      const wave = new THREE.Mesh(new THREE.TorusGeometry(1, .14, 6, 28), new THREE.MeshBasicMaterial({ color: '#b1efca', transparent: true, opacity: .9 }));
+      wave.rotation.x = -Math.PI / 2; wave.position.set(player.position.x, .12, player.position.z); scene.add(wave);
+      impactWaves.push({ mesh: wave, life: .38 });
+      soldiers.forEach(enemy => { if (enemy.userData.alive && enemy.position.distanceTo(player.position) < 4.8) killSoldier(enemy); });
+    }
+    function killSoldier(enemy) {
+      if (!enemy.userData.alive) return;
+      enemy.userData.alive = false; enemy.visible = false; kills++; scoreBurst(enemy.position.x, enemy.position.z);
+    }
+    function damagePlane(plane, amount) {
+      if (!plane.userData.alive) return;
+      plane.userData.hp = Math.max(0, plane.userData.hp - amount);
+      if (plane.userData.role === 'kamikaze') plane.userData.hitStun = .7;
+      updateHud();
+      if (plane.userData.hp <= 0) {
+        plane.userData.alive = false; plane.visible = false;
+        const blast = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), mats.enemyEnergy);
+        blast.position.copy(plane.position); scene.add(blast);
+        setTimeout(() => scene.remove(blast), 420);
+        if (plane === pilotedPlane) {
+          plane.userData.piloted = false; pilotedPlane = null; player.visible = true;
+          aircraftStatus.hidden = true;
+          finish(false, true);
+          return;
+        }
+        plane.userData.respawn = 2.8;
+      }
+    }
+    function resolveAirCollisions() {
+      for (let firstIndex = 0; firstIndex < planes.length; firstIndex++) {
+        const first = planes[firstIndex];
+        if (!first.userData.alive) continue;
+        const firstData = first.userData;
+        if (first !== pilotedPlane && first.position.distanceTo(player.position) < 3.8 && Math.abs(first.position.y - (player.position.y + .8)) < 2.6 && firstData.playerCollisionCooldown <= 0) {
+          firstData.playerCollisionCooldown = 1.8;
+          damagePlane(first, firstData.role === 'kamikaze' ? firstData.maxHp : 6);
+          if (pilotedPlane) damagePlane(pilotedPlane, firstData.role === 'kamikaze' ? 12 : 5);
+          else hit(firstData.role === 'kamikaze' ? 32 : 12);
+          if (!playing) return;
+        }
+        for (let secondIndex = firstIndex + 1; secondIndex < planes.length; secondIndex++) {
+          const second = planes[secondIndex];
+          if (!second.userData.alive || first.position.distanceTo(second.position) > 4.2 || Math.abs(first.position.y - second.position.y) > 3) continue;
+          const secondData = second.userData;
+          if (firstData.collisionCooldown > 0 && secondData.collisionCooldown > 0) continue;
+          firstData.collisionCooldown = .9; secondData.collisionCooldown = .9;
+          const firstDamage = firstData.role === 'kamikaze' ? firstData.maxHp : secondData.role === 'kamikaze' ? 12 : 6;
+          const secondDamage = secondData.role === 'kamikaze' ? secondData.maxHp : firstData.role === 'kamikaze' ? 12 : 6;
+          damagePlane(first, firstDamage); damagePlane(second, secondDamage);
+          const impact = new THREE.Mesh(new THREE.SphereGeometry(1.2, 10, 8), mats.enemyEnergy);
+          impact.position.copy(first.position).add(second.position).multiplyScalar(.5); scene.add(impact);
+          setTimeout(() => scene.remove(impact), 360);
+          if (!playing) return;
+        }
+      }
+    }
+    function scoreBurst(x, z) {
+      for (let i = 0; i < 5; i++) projectile(x + (Math.random() - .5), .5 + Math.random(), z, true, (Math.random() - .5) * .7, .2, -Math.random());
+    }
+    function finish(won, aircraftDestroyed = false) {
+      playing = false;
+      const overlay = document.querySelector('#end-overlay'); overlay.classList.toggle('won', won);
+      if (won) {
+        ending = { elapsed: 0, mode: pilotedPlane ? 'plane' : 'foot' };
+        landscapeStage.classList.add('cinematic');
+        endingCaption.textContent = 'El pasado queda atrás';
+        planes.forEach(plane => { plane.visible = plane === pilotedPlane; });
+        soldiers.forEach(enemy => { enemy.visible = false; });
+        projectiles.forEach(p => scene.remove(p.mesh)); projectiles.length = 0;
+        return;
+      }
+      overlay.classList.remove('hidden');
+      document.querySelector('#end-title').innerHTML = won ? 'Más allá<span>del frente</span>' : 'Capturado<span>Fin de la huida</span>';
+      document.querySelector('#end-copy').textContent = won ? 'Has cruzado la frontera. Tu vida anterior queda atrás; ahora empieza otra.' : aircraftDestroyed ? 'El avión se deshizo bajo el fuego. No lograste saltar a tiempo.' : `La persecución termina aquí. Avanzaste ${(GOAL_DISTANCE - distance).toFixed(0)} metros.`;
+    }
+    function blocked(x, z) {
+      return obstacles.some(obstacle => Math.hypot(x - obstacle.x, z - obstacle.z) < obstacle.radius + .7);
+    }
+    function reset() {
+      health = 100; energy = 100; elapsed = 0; progress = 0; distance = GOAL_DISTANCE; kills = 0; player.position.set(0, 0, 0);
+      cameraYaw = 0; cameraPitch = .52; cameraDrag = null; pointer.set(0, 0); aimReticle.style.left = '50%'; aimReticle.style.top = '50%';
+      soldiers.forEach(enemy => { enemy.visible = true; enemy.userData.alive = true; enemy.userData.cooldown = 1 + Math.random() * 2; });
+      ejectedPilots.forEach(({ mesh }) => {
+        const aircraft = planes.find(plane => plane.userData.pilot === mesh);
+        if (aircraft) { aircraft.add(mesh); mesh.position.set(0, .18, -.58); mesh.rotation.set(0, 0, 0); mesh.userData.parachute.visible = false; }
+      });
+      ejectedPilots.length = 0;
+      planes.forEach((plane, i) => {
+        const baseX = (i % 4 - 1.5) * 30;
+        plane.visible = true; plane.rotation.set(0, (i % 4 - 1.5) * .08, 0);
+        plane.position.set(baseX, 8.5 + (i % 2) * 1.2, -24 - Math.floor(i / 4) * 48 - (i % 4) * 8);
+        plane.userData.baseX = baseX; plane.userData.alive = true; plane.userData.hp = plane.userData.maxHp; plane.userData.respawn = 0;
+        plane.userData.burstRemaining = 0; plane.userData.cooldown = 1 + Math.random() * 1.2;
+        plane.userData.piloted = false; plane.userData.landed = false; plane.userData.heading = plane.rotation.y;
+        plane.userData.flightSpeed = 24; plane.userData.verticalSpeed = 0; plane.userData.turnRate = 0;
+        plane.userData.mountainCooldown = 0; plane.userData.collisionCooldown = 0; plane.userData.playerCollisionCooldown = 0;
+      });
+      projectiles.forEach(p => scene.remove(p.mesh)); projectiles.length = 0;
+      weapon = 'pulse'; blade.visible = false; spear.visible = false; jumpV = 0; grounded = true; invulnerable = 0;
+      fireCooldown = 0; dashCooldown = 0; dashTime = 0; specialCooldown = 0; meleeSwing = 0; impactShake = 0; aircraftDropHeight = 0; activePhase = -1;
+      if (pilotedPlane) pilotedPlane.userData.piloted = false;
+      pilotedPlane = null; player.visible = true;
+      planes.forEach(plane => { plane.userData.piloted = false; });
+      impactWaves.forEach(wave => scene.remove(wave.mesh)); impactWaves.length = 0;
+      ending = null; landscapeStage.classList.remove('cinematic'); endingCaption.textContent = 'El pasado queda atrás';
+      updateHud();
+    }
+    function start() { reset(); playing = true; document.querySelector('#start-overlay').classList.add('hidden'); document.querySelector('#end-overlay').classList.add('hidden'); clock.getDelta(); }
+    document.querySelector('#start-button').addEventListener('click', start);
+    document.querySelector('#restart-button').addEventListener('click', start);
+    addEventListener('keydown', event => {
+      const key = event.key.toLowerCase(); keys.add(key);
+      if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) event.preventDefault();
+      if (key === ' ' && grounded && playing) { jumpV = 17; grounded = false; }
+      if (key === 'e' || key === 'enter') fire();
+      if (key === 'f') specialStrike();
+      if (key === 'q' && playing && !event.repeat) toggleAircraft();
+      if (key === '1' && playing) activateWeapon('pulse');
+      if (key === '2' && playing) activateWeapon('blade');
+      if (key === '3' && playing) activateWeapon('spear');
+      if ((key === 'shift' || key === 'shiftleft' || key === 'shiftright') && dashCooldown <= 0 && playing) { dashTime = .24; dashCooldown = 1.25; }
+    });
+    addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
+    renderer.domElement.addEventListener('contextmenu', event => event.preventDefault());
+    renderer.domElement.addEventListener('pointerdown', event => {
+      if (event.button === 2 || event.pointerType === 'touch') {
+        const point = stagePoint(event);
+        cameraDrag = { pointerId: event.pointerId, x: point.x, y: point.y };
+        renderer.domElement.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        return;
+      }
+      moveAim(event); fire();
+    });
+    renderer.domElement.addEventListener('pointermove', event => {
+      if (cameraDrag && cameraDrag.pointerId === event.pointerId) {
+        const point = stagePoint(event);
+        const deltaX = point.x - cameraDrag.x;
+        const deltaY = point.y - cameraDrag.y;
+        cameraYaw -= deltaX * .006;
+        cameraPitch = THREE.MathUtils.clamp(cameraPitch + deltaY * .004, .15, 1.15);
+        cameraDrag.x = point.x; cameraDrag.y = point.y;
+        pointer.set(0, 0); aimReticle.style.left = '50%'; aimReticle.style.top = '50%'; updateAim();
+        return;
+      }
+      moveAim(event);
+    });
+    renderer.domElement.addEventListener('pointerup', event => { if (cameraDrag?.pointerId === event.pointerId) cameraDrag = null; });
+    renderer.domElement.addEventListener('pointercancel', () => { cameraDrag = null; });
+    document.querySelectorAll('[data-hold]').forEach(button => {
+      const key = button.dataset.hold === 'space' ? ' ' : button.dataset.hold;
+      button.addEventListener('pointerdown', event => { event.preventDefault(); keys.add(key); if (key === ' ' && grounded && playing) { jumpV = 17; grounded = false; } });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(type => button.addEventListener(type, () => keys.delete(key)));
+    });
+    document.querySelector('[data-action="fire"]').addEventListener('pointerdown', event => { event.preventDefault(); fire(); });
+    document.querySelector('[data-action="dash"]').addEventListener('pointerdown', event => { event.preventDefault(); if (dashCooldown <= 0) { dashTime = .24; dashCooldown = 1.25; } });
+    document.querySelector('[data-action="special"]').addEventListener('pointerdown', event => { event.preventDefault(); specialStrike(); });
+    document.querySelector('[data-action="hijack"]').addEventListener('pointerdown', event => { event.preventDefault(); toggleAircraft(); });
+    document.querySelector('[data-action="weapon"]').addEventListener('pointerdown', event => { event.preventDefault(); if (playing) cycleWeapon(); });
+
+    function update(dt) {
+      elapsed += dt; fireCooldown = Math.max(0, fireCooldown - dt); dashCooldown = Math.max(0, dashCooldown - dt); dashTime = Math.max(0, dashTime - dt);
+      specialCooldown = Math.max(0, specialCooldown - dt); meleeSwing = Math.max(0, meleeSwing - dt); impactShake = Math.max(0, impactShake - dt); invulnerable = Math.max(0, invulnerable - dt);
+      energy = Math.min(100, energy + dt * 3.2);
+      const moveX = Number(keys.has('d')) - Number(keys.has('a'));
+      const moveZ = Number(keys.has('s')) - Number(keys.has('w'));
+      if (pilotedPlane) {
+        const data = pilotedPlane.userData;
+        const turn = Number(keys.has('a')) - Number(keys.has('d'));
+        data.turnRate = THREE.MathUtils.damp(data.turnRate || 0, turn, 4.5, dt);
+        data.heading += data.turnRate * 1.05 * dt;
+        const targetSpeed = data.landed ? (keys.has('w') ? 12 : 0) : keys.has('shift') ? 42 : 30;
+        data.flightSpeed = THREE.MathUtils.damp(data.flightSpeed, targetSpeed, 1.5, dt);
+        data.verticalSpeed = THREE.MathUtils.damp(data.verticalSpeed, (keys.has('w') ? 1 : keys.has('s') ? -1 : 0) * 8, 2.6, dt);
+        const flightSpeed = data.flightSpeed;
+        const nextX = THREE.MathUtils.clamp(pilotedPlane.position.x - Math.sin(data.heading) * flightSpeed * dt, -112, 112);
+        const nextZ = THREE.MathUtils.clamp(pilotedPlane.position.z - Math.cos(data.heading) * flightSpeed * dt, -GOAL_DISTANCE, 0);
+        const nextY = THREE.MathUtils.clamp(pilotedPlane.position.y + data.verticalSpeed * dt, .85, 22);
+        const mountainHit = mountains.some(mountain => {
+          const distanceToMountain = Math.hypot(nextX - mountain.x, nextZ - mountain.z);
+          const peakHeight = Math.max(0, 1 - distanceToMountain / mountain.radius) * mountain.radius * 1.25;
+          return distanceToMountain < mountain.radius && nextY < peakHeight + 1.8;
+        });
+        const vegetationHit = obstacles.some(obstacle => obstacle.height <= 8 && Math.hypot(nextX - obstacle.x, nextZ - obstacle.z) < obstacle.radius + 1.8 && nextY < obstacle.height + 1.1);
+        data.mountainCooldown = Math.max(0, (data.mountainCooldown || 0) - dt);
+        if (mountainHit) {
+          data.landed = false;
+          pilotedPlane.position.y = nextY;
+          if (data.mountainCooldown <= 0) {
+            damagePlane(pilotedPlane, 2); data.mountainCooldown = 1.2;
+            data.flightSpeed = Math.max(8, data.flightSpeed * .58); data.heading += Math.PI * .18;
+          }
+        } else {
+          if (vegetationHit && data.mountainCooldown <= 0) {
+            damagePlane(pilotedPlane, 1); data.mountainCooldown = 1.8;
+            if (!pilotedPlane) return;
+            data.flightSpeed = Math.max(8, data.flightSpeed * .84);
+          }
+          pilotedPlane.position.x = nextX;
+          pilotedPlane.position.z = nextZ;
+          data.landed = nextY <= 1.05;
+          pilotedPlane.position.y = data.landed ? .85 : nextY;
+          if (data.landed) data.verticalSpeed = 0;
+        }
+        if (!pilotedPlane) return;
+        pilotedPlane.rotation.y = data.heading;
+        pilotedPlane.rotation.x = data.verticalSpeed * .025;
+        pilotedPlane.rotation.z = THREE.MathUtils.damp(pilotedPlane.rotation.z, -data.turnRate * .38, 4, dt);
+        data.prop.rotation.z += dt * 28;
+        player.position.set(pilotedPlane.position.x, pilotedPlane.position.y - 1, pilotedPlane.position.z);
+        player.rotation.y = data.heading; cameraYaw = data.heading;
+      } else {
+        let speed = dashTime > 0 ? 34 : (keys.has('shift') ? 22 : 15);
+        const moveLength = Math.hypot(moveX, moveZ) || 1;
+        const localX = moveX / moveLength, localZ = moveZ / moveLength;
+        const worldX = localX * Math.cos(cameraYaw) + localZ * Math.sin(cameraYaw);
+        const worldZ = -localX * Math.sin(cameraYaw) + localZ * Math.cos(cameraYaw);
+        let nextX = THREE.MathUtils.clamp(player.position.x + worldX * speed * dt, -112, 112);
+        let nextZ = THREE.MathUtils.clamp(player.position.z + worldZ * speed * dt, -GOAL_DISTANCE, 0);
+        if (craterZones.some(zone => Math.hypot(nextX - zone.x, nextZ - zone.z) < zone.radius)) {
+          speed *= .48;
+          nextX = THREE.MathUtils.clamp(player.position.x + worldX * speed * dt, -112, 112);
+          nextZ = THREE.MathUtils.clamp(player.position.z + worldZ * speed * dt, -GOAL_DISTANCE, 0);
+        }
+        if (blocked(nextX, nextZ)) {
+          if (!blocked(nextX, player.position.z)) nextZ = player.position.z;
+          else if (!blocked(player.position.x, nextZ)) nextX = player.position.x;
+          else { nextX = player.position.x; nextZ = player.position.z; }
+        }
+        player.position.x = nextX; player.position.z = nextZ;
+        if (moveLength > 0 && (moveX || moveZ)) player.rotation.y = Math.atan2(-worldX, -worldZ);
+        player.position.y += jumpV * dt; jumpV -= 18 * dt;
+        if (player.position.y <= 0) {
+          const hardLanding = !grounded && jumpV < -12;
+          if (aircraftDropHeight > 0) {
+            const fallDamage = Math.min(100, Math.ceil(Math.max(0, aircraftDropHeight - 2) * 5.5));
+            aircraftDropHeight = 0;
+            if (fallDamage > 0) hit(fallDamage);
+          }
+          player.position.y = 0; jumpV = 0; grounded = true;
+          if (hardLanding) groundImpact();
+        }
+      }
+      if (meleeSwing > 0) blade.rotation.z = -.9 + Math.sin((1 - meleeSwing / .24) * Math.PI) * 1.3;
+      else if (blade.visible) { blade.visible = false; blade.rotation.z = -.18; }
+      player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -moveX * .16, .15);
+      limbs.forEach((limb, index) => { limb.rotation.x = grounded ? Math.sin(elapsed * 17 + index * Math.PI) * .42 : 0; });
+      shadow.scale.setScalar(Math.max(.48, 1 - player.position.y * .06)); shadow.material.opacity = Math.max(.12, .42 - player.position.y * .045);
+      progress = Math.max(0, -player.position.z); distance = Math.max(0, GOAL_DISTANCE - progress);
+      if (distance <= 0) { finish(true); return; }
+      const phasePressure = 1 + Math.min(3, Math.floor(progress / PHASE_LENGTH)) * .18;
+      planes.forEach(plane => {
+        const data = plane.userData; data.phase += dt;
+        data.collisionCooldown = Math.max(0, (data.collisionCooldown || 0) - dt);
+        data.playerCollisionCooldown = Math.max(0, (data.playerCollisionCooldown || 0) - dt);
+        if (data.piloted) return;
+        if (!data.alive) {
+          if (data.role === 'kamikaze') return;
+          data.respawn -= dt;
+          if (data.respawn <= 0) { data.alive = true; data.hp = data.maxHp; plane.visible = true; data.baseX = player.position.x + (Math.random() - .5) * 130; plane.position.set(data.baseX, 8 + Math.random() * 4, player.position.z - 95 - Math.random() * 100); data.cooldown = .5; }
+          return;
+        }
+        if (data.role === 'kamikaze' && data.hitStun > 0) {
+          data.hitStun = Math.max(0, data.hitStun - dt);
+          data.prop.rotation.z += dt * 22;
+          return;
+        }
+        const nearPlayer = Math.abs(plane.position.z - player.position.z) < 95;
+        if (data.role === 'kamikaze' && nearPlayer) {
+          const dx = player.position.x - plane.position.x, dz = player.position.z - plane.position.z;
+          const chaseDistance = Math.hypot(dx, dz) || 1;
+          const chargeSpeed = 12 + phasePressure;
+          plane.position.x += dx / chaseDistance * chargeSpeed * dt;
+          plane.position.z += dz / chaseDistance * chargeSpeed * dt;
+        } else plane.position.z += data.speed * dt;
+        const turnWave = Math.sin(data.phase * (.62 + data.maneuver * .16));
+        const pursuit = nearPlayer ? (player.position.x - plane.position.x) * (data.maneuver === 1 ? .72 : .38) : 0;
+        const desiredX = data.role === 'kamikaze' && nearPlayer ? player.position.x : data.baseX + turnWave * (data.maneuver === 1 ? 9 : 4) + pursuit;
+        const lateralTurn = desiredX - plane.position.x;
+        plane.position.x = THREE.MathUtils.damp(plane.position.x, desiredX, 1.5, dt);
+        const dive = data.role === 'kamikaze' && nearPlayer ? 7 : data.maneuver === 2 && nearPlayer ? 4.5 : 0;
+        const desiredAltitude = THREE.MathUtils.clamp(data.baseAltitude + Math.sin(data.phase * (1 + data.maneuver * .24)) * (data.maneuver === 1 ? 3.2 : 1.7) - dive, data.role === 'kamikaze' ? 1.7 : 6, 17);
+        plane.position.y = THREE.MathUtils.damp(plane.position.y, desiredAltitude, 1.3, dt);
+        plane.rotation.y = Math.atan2(-lateralTurn * .08, 1);
+        plane.rotation.z = THREE.MathUtils.clamp(-lateralTurn * .045, -.38, .38);
+        data.prop.rotation.z += dt * 22;
+        data.cooldown -= dt;
+        if (data.role !== 'kamikaze' && data.cooldown <= 0 && plane.position.z > player.position.z - 35 && plane.position.z < player.position.z + 8) {
+          if (data.burstRemaining > 0) {
+            const dx = player.position.x - plane.position.x;
+            const dz = player.position.z - plane.position.z;
+            const aimDistance = Math.hypot(dx, dz) || 1;
+            projectile(plane.position.x, plane.position.y - .55, plane.position.z, false, dx / aimDistance * 19 * phasePressure, -.6, dz / aimDistance * 19 * phasePressure, 'bullet');
+            data.burstRemaining--; data.cooldown = .2 / phasePressure;
+          } else if (data.mode === 'bomb') {
+            projectile(plane.position.x, plane.position.y - .8, plane.position.z, false, 0, -7.5, 0, 'bomb');
+            data.mode = 'gun'; data.cooldown = 2.4 / phasePressure;
+          } else if (Math.random() < .3 + (phasePressure - 1) * .25) {
+            data.mode = 'bomb'; data.cooldown = .16;
+          } else {
+            data.burstRemaining = 3; data.cooldown = .08;
+          }
+        }
+        if (plane.position.z > player.position.z + 30) { plane.position.z = player.position.z - 80 - Math.random() * 60; data.baseX = (Math.random() - .5) * 17; data.cooldown = .8 + Math.random() * 1.2; }
+      });
+      resolveAirCollisions();
+      if (!playing) return;
+      soldiers.forEach(enemy => {
+        if (!enemy.userData.alive) return;
+        const dx = player.position.x - enemy.position.x;
+        const dz = player.position.z - enemy.position.z;
+        const distanceToPlayer = Math.hypot(dx, dz);
+        enemy.userData.cooldown -= dt;
+        if (enemy.userData.mode === 'melee' && distanceToPlayer < 72) {
+          if (distanceToPlayer > 1.7) {
+            const step = Math.min(6.5 * phasePressure * dt, distanceToPlayer - 1.5);
+            const chaseX = enemy.position.x + dx / distanceToPlayer * step;
+            const chaseZ = enemy.position.z + dz / distanceToPlayer * step;
+            if (!blocked(chaseX, chaseZ)) { enemy.position.x = chaseX; enemy.position.z = chaseZ; }
+          } else if (enemy.userData.cooldown <= 0) {
+            hit(13); enemy.userData.cooldown = 1.05;
+          }
+        } else if (enemy.userData.mode === 'rifle' && distanceToPlayer < 62 && enemy.userData.cooldown <= 0) {
+          const aimDistance = Math.hypot(dx, 1 - player.position.y, dz) || 1;
+          const shotSpeed = 18 * phasePressure;
+          projectile(enemy.position.x, 1.15, enemy.position.z, false, dx / aimDistance * shotSpeed, (player.position.y + .8 - 1.15) / aimDistance * shotSpeed, dz / aimDistance * shotSpeed, 'bullet');
+          enemy.userData.cooldown = (.9 + Math.random() * .6) / phasePressure;
+        }
+      });
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i]; p.life -= dt;
+                if (p.friendly && p.target?.userData.alive) {
+                  const homing = p.target.position.clone().add(new THREE.Vector3(0, .2, 0)).sub(p.mesh.position).normalize();
+                  const homingSpeed = p.kind === 'spear' ? 60 : 56;
+                  p.vx = homing.x * homingSpeed; p.vy = homing.y * homingSpeed; p.vz = homing.z * homingSpeed;
+                }
+        p.mesh.position.x += p.vx * dt; p.mesh.position.y += p.vy * dt; p.mesh.position.z += p.vz * dt;
+        if (p.friendly) {
+          const aircraft = planes.find(plane => plane.userData.alive && plane !== pilotedPlane && !p.hitTargets.has(plane) && p.mesh.position.distanceTo(plane.position) < 4.5);
+          if (aircraft) {
+            p.hitTargets.add(aircraft);
+            const damage = aircraft.userData.role === 'kamikaze' ? 4 : p.kind === 'spear' ? 4 : 3;
+            damagePlane(aircraft, damage);
+            if (p.kind !== 'spear') p.life = 0;
+          }
+          if (p.life > 0) for (const enemy of soldiers) if (enemy.userData.alive && !p.hitTargets.has(enemy) && Math.abs(enemy.position.x - p.mesh.position.x) < (p.kind === 'spear' ? 1.1 : .8) && Math.abs(enemy.position.z - p.mesh.position.z) < (p.kind === 'spear' ? 1.3 : 1.1)) { p.hitTargets.add(enemy); killSoldier(enemy); if (p.kind !== 'spear') { p.life = 0; break; } }
+        } else if (p.kind === 'bomb' && p.mesh.position.y <= .1) {
+          if (Math.hypot(p.mesh.position.x - player.position.x, p.mesh.position.z - player.position.z) < 6 && player.position.y < 1.8) hit(38);
+          const blast = new THREE.Mesh(new THREE.SphereGeometry(2.3, 10, 8), mats.enemyEnergy); blast.position.set(p.mesh.position.x, .8, p.mesh.position.z); scene.add(blast); setTimeout(() => scene.remove(blast), 380); p.life = 0;
+        } else if (Math.abs(p.mesh.position.x - player.position.x) < (p.vz > 2 ? 1.25 : .95) && Math.abs(p.mesh.position.z - player.position.z) < 1.1 && Math.abs(p.mesh.position.y - (player.position.y + .8)) < 1.5) {
+          if (pilotedPlane) damagePlane(pilotedPlane, p.kind === 'bullet' ? 1 : 2);
+          else hit(p.kind === 'bullet' ? 5 : p.vz > 2 ? 30 : 18);
+          p.life = 0;
+        }
+        if (p.mesh.position.y < .15 && !p.friendly && p.vy < 0) p.life = 0;
+        if (p.life <= 0 || Math.abs(p.mesh.position.z - player.position.z) > 110) { scene.remove(p.mesh); projectiles.splice(i, 1); }
+      }
+      for (let i = ejectedPilots.length - 1; i >= 0; i--) {
+        const pilot = ejectedPilots[i];
+        pilot.life -= dt; pilot.velocity.y = Math.max(-1.8, pilot.velocity.y - 3 * dt);
+        pilot.mesh.position.addScaledVector(pilot.velocity, dt);
+        pilot.mesh.rotation.z = Math.sin(elapsed * 5) * .08;
+        if (pilot.life <= 0 || pilot.mesh.position.y < -.5) {
+          scene.remove(pilot.mesh); ejectedPilots.splice(i, 1);
+        }
+      }
+      for (let i = impactWaves.length - 1; i >= 0; i--) {
+        const wave = impactWaves[i]; wave.life -= dt;
+        const progressRatio = 1 - wave.life / .38;
+        wave.mesh.scale.setScalar(.35 + progressRatio * 4.5); wave.mesh.material.opacity = Math.max(0, 1 - progressRatio);
+        if (wave.life <= 0) { scene.remove(wave.mesh); wave.mesh.geometry.dispose(); wave.mesh.material.dispose(); impactWaves.splice(i, 1); }
+      }
+      const orbitDistance = 16;
+      const horizontalDistance = Math.cos(cameraPitch) * orbitDistance;
+      const shake = impactShake > 0 ? Math.sin(elapsed * 72) * impactShake : 0;
+      camera.position.x = player.position.x + Math.sin(cameraYaw) * horizontalDistance + shake;
+      camera.position.y = 1.2 + player.position.y * .68 + Math.sin(cameraPitch) * orbitDistance + Math.abs(shake) * .6;
+      camera.position.z = player.position.z + Math.cos(cameraYaw) * horizontalDistance;
+      camera.lookAt(player.position.x - Math.sin(cameraYaw) * 4, 1.8 + player.position.y * .65, player.position.z - Math.cos(cameraYaw) * 4);
+      updateAim();
+      updateHud();
+    }
+    function updateEnding(dt) {
+      ending.elapsed += dt;
+      if (ending.mode === 'plane' && pilotedPlane) {
+        const aircraft = pilotedPlane;
+        aircraft.position.z -= 13 * dt;
+        aircraft.position.y = Math.min(25, aircraft.position.y + 1.4 * dt);
+        aircraft.userData.prop.rotation.z += dt * 32;
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, aircraft.position.x, dt * .08);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, aircraft.position.y + 7, dt * .08);
+        camera.position.z -= dt * 1.8;
+        camera.lookAt(aircraft.position.x, aircraft.position.y, aircraft.position.z - 6);
+      } else {
+        player.position.z -= 7.5 * dt;
+        player.position.x += Math.sin(ending.elapsed * .7) * .22 * dt;
+        player.rotation.y = 0;
+        limbs.forEach((limb, index) => { limb.rotation.x = Math.sin(ending.elapsed * 8 + index * Math.PI) * .38; });
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, player.position.x, dt * .06);
+        camera.position.z -= dt * .75;
+        camera.lookAt(player.position.x, 1.1, player.position.z);
+      }
+      if (ending.elapsed < 5.5) return;
+      const mode = ending.mode;
+      ending = null; pilotedPlane = null;
+      landscapeStage.classList.remove('cinematic');
+      const overlay = document.querySelector('#end-overlay');
+      overlay.classList.remove('hidden'); overlay.classList.add('won');
+      document.querySelector('#end-title').innerHTML = 'Escapaste<span>Una vida nueva</span>';
+      document.querySelector('#end-copy').textContent = mode === 'plane'
+        ? 'Cruzaste la frontera por el aire. Dejaste atrás la persecución y tu vida pasada.'
+        : 'Cruzaste la frontera a pie. La persecución terminó; tu vida nueva empieza ahora.';
+    }
+    function render() {
+      requestAnimationFrame(render);
+      const dt = Math.min(clock.getDelta(), .04);
+      if (playing) update(dt);
+      else if (ending) updateEnding(dt);
+      renderer.render(scene, camera);
+    }
+    addEventListener('resize', () => {
+      const viewport = landscapeViewport();
+      camera.aspect = viewport.width / viewport.height; camera.updateProjectionMatrix(); renderer.setSize(viewport.width, viewport.height);
+    });
+    render();
+  </script>
+</body>
+</html>

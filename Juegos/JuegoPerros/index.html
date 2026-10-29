@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La piedra invisible</title>
+    <meta
+      name="description"
+      content="Prototipo de FPS de supervivencia urbana no letal"
+    />
+  </head>
+  <body>
+    <div id="hud" class="hud hidden">
+      <div id="damageFlash" class="damage-flash" aria-hidden="true"></div>
+      <div class="top-bar">
+        <div class="health-panel">
+          <span>Vida</span>
+          <div class="health-track" role="progressbar" aria-label="Vida" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+            <div id="healthFill" class="health-fill"></div>
+          </div>
+          <strong id="healthValue">100 / 100</strong>
+        </div>
+
+        <div class="tool-panel">
+          <span>Herramienta</span>
+          <strong id="currentTool">Comida</strong>
+          <small id="toolDetail">x5</small>
+        </div>
+      </div>
+
+      <div id="damageNotice" class="damage-notice" role="status" aria-live="polite"></div>
+
+      <div class="stamina-panel">
+        <div class="stamina-heading">
+          <span>Resistencia</span>
+          <strong id="staminaValue">100%</strong>
+        </div>
+        <div class="stamina-track" role="progressbar" aria-label="Resistencia" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+          <div id="staminaFill" class="stamina-fill"></div>
+        </div>
+        <small id="perchStatus">E junto a un banco o árbol</small>
+      </div>
+
+      <div id="grapplePanel" class="grapple-panel hidden" role="status" aria-live="polite">
+        <strong id="grappleTitle">¡Un perro te alcanzó!</strong>
+        <span id="grappleInstructions">Pulsa Espacio 5 veces en 1 segundo para zafarte.</span>
+        <div class="grapple-track" role="progressbar" aria-label="Resistencia del perro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+          <div id="grappleDogFill" class="grapple-fill"></div>
+        </div>
+        <small id="grappleProgress">Pulsaciones: 0 / 5</small>
+      </div>
+
+      <div class="objective-panel">
+        <span>Ruta de evacuación</span>
+        <strong id="objectiveStatus">Tramo 1/3 · Cruza la calle</strong>
+      </div>
+
+      <div id="crosshair" class="crosshair" aria-hidden="true">
+        <span></span>
+      </div>
+
+      <div class="action-bar">
+        <button id="menuButton" class="hud-button">Menú</button>
+        <button id="resetButton" class="hud-button secondary">Reiniciar</button>
+      </div>
+
+      <div id="toolButtons" class="tool-buttons">
+        <button class="tool-btn active" data-tool="food"><kbd>1</kbd> Comida</button>
+        <button class="tool-btn" data-tool="water"><kbd>2</kbd> Agua</button>
+        <button class="tool-btn" data-tool="bottle"><kbd>3</kbd> Botella</button>
+        <button class="tool-btn" data-tool="branch"><kbd>4</kbd> Rama</button>
+        <button class="tool-btn" data-tool="stone"><kbd>5</kbd> Piedra ∞</button>
+      </div>
+    </div>
+
+    <div id="menuOverlay" class="overlay visible" role="dialog" aria-modal="true">
+      <div class="menu-panel">
+        <p class="eyebrow">Prototipo v1.1</p>
+        <h1>La piedra invisible</h1>
+        <p class="subtitle">Supervivencia urbana no letal</p>
+
+        <div class="button-stack">
+          <button id="startButton" class="primary">Iniciar</button>
+          <button id="resumeButton" class="secondary">Reanudar</button>
+          <button id="optionsButton" class="secondary">Alternar atardecer</button>
+        </div>
+
+        <div class="help-box">
+          <h2>Controles</h2>
+          <ul>
+            <li>WASD o flechas para caminar.</li>
+            <li>Mantén Q para correr más rápido; consume resistencia.</li>
+            <li>Ratón para mirar.</li>
+            <li>Teclas 1 a 5 para elegir herramienta; clic izquierdo para usarla.</li>
+            <li>La piedra invisible es ilimitada; recoge botellas y ramas acercándote.</li>
+            <li>E junto a un banco o árbol para subir; E de nuevo para bajar. La altura protege según el perro y consume resistencia.</li>
+            <li>Los perros tranquilos pueden alertarse, perseguirte y atacar; rodean los obstáculos al seguirte.</li>
+            <li>Si te alcanza un perro, pulsa Espacio 5 veces en 1 segundo: cada esfuerzo consume tu resistencia y agota al perro.</li>
+            <li>Esc para abrir el menú.</li>
+            <li>Llega al punto verde para ganar; si tu vida llega a cero, pierdes.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="endOverlay" class="overlay end-overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <div class="menu-panel end-panel">
+        <p class="eyebrow">Fin de la partida</p>
+        <h2 id="endTitle">La ruta se interrumpió</h2>
+        <p id="endMessage" class="end-message"></p>
+        <div class="button-stack">
+          <button id="endRestartButton" class="primary">Jugar de nuevo</button>
+          <button id="endMenuButton" class="secondary">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

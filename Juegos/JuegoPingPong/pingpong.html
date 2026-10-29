@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impossible Ping Pong</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: #000;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#gameWrapper {
+    width: min(1000px, 96vw);
+    text-align: center;
+}
+
+/* =========================
+   TITLE
+========================= */
+
+h1 {
+    margin: 0 0 10px;
+    font-size: clamp(28px, 5vw, 46px);
+    letter-spacing: 4px;
+    color: white;
+}
+
+/* =========================
+   MENU
+========================= */
+
+#menu {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+button {
+    border: 1px solid #555;
+    background: #050505;
+    color: white;
+    padding: 9px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #151515;
+}
+
+button.active {
+    background: white;
+    color: black;
+}
+
+/* =========================
+   HUD
+========================= */
+
+#hud {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+#leftScore {
+    color: #ff3030;
+    text-align: left;
+}
+
+#rightScore {
+    color: #308cff;
+    text-align: right;
+}
+
+#message {
+    color: #ddd;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* =========================
+   GAME
+========================= */
+
+#canvas {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: block;
+
+    background: #000;
+
+    border: 2px solid #222;
+    border-radius: 8px;
+
+    box-shadow:
+        0 0 30px rgba(255,255,255,0.04),
+        inset 0 0 50px rgba(255,255,255,0.02);
+}
+
+/* =========================
+   POWER LEGEND
+========================= */
+
+.legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+
+    color: #aaa;
+    font-size: 11px;
+}
+
+.legend span {
+    background: #080808;
+    border: 1px solid #222;
+    padding: 4px 7px;
+    border-radius: 4px;
+}
+
+/* =========================
+   INSTRUCTIONS
+========================= */
+
+#instructions {
+    margin-top: 8px;
+    color: #777;
+    font-size: 12px;
+}
+
+/* =========================
+   OVERLAY
+========================= */
+
+#overlay {
+    position: fixed;
+    inset: 0;
+
+    display: none;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0,0,0,0.88);
+
+    z-index: 20;
+}
+
+#overlayBox {
+    width: min(500px, 90vw);
+
+    padding: 30px;
+
+    background: #050505;
+
+    border: 2px solid #fff;
+    border-radius: 10px;
+
+    box-shadow:
+        0 0 40px rgba(255,255,255,0.08);
+}
+
+#overlayTitle {
+    font-size: 34px;
+    margin-bottom: 12px;
+}
+
+#overlayText {
+    color: #ccc;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   COLOR FLASH
+========================= */
+
+#flash {
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: 0;
+
+    z-index: 15;
+}
+
+@keyframes flashEffect {
+    0% {
+        opacity: 0.18;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+.flash {
+    animation: flashEffect 0.3s ease-out;
+}
+</style>
+</head>
+
+<body>
+
+<a href="../../juegos.html" style="position: absolute; top: 16px; left: 16px; z-index: 9999; padding: 10px 14px; border: 1px solid #fff; border-radius: 6px; color: #fff; background: #050505; font: bold 13px Arial, Helvetica, sans-serif; text-decoration: none;">Volver al Arcade</a>
+
+<div id="gameWrapper">
+
+    <h1>PING PONG</h1>
+
+    <div id="menu">
+        <button id="normalBtn">Normal Game</button>
+        <button id="impossibleBtn" class="active">
+            Impossible Game
+        </button>
+        <button id="multiBtn">
+            2 Players
+        </button>
+
+        <button id="restartBtn">
+            Restart
+        </button>
+    </div>
+
+    <div id="hud">
+
+        <div id="leftScore">
+            Player: 0
+        </div>
+
+        <div id="message">
+            Impossible mode. Good luck.
+        </div>
+
+        <div id="rightScore">
+            CPU: 0
+        </div>
+
+    </div>
+
+    <canvas
+        id="canvas"
+        width="960"
+        height="540">
+    </canvas>
+
+    <div class="legend">
+
+        <span>🔴 G = Grenade</span>
+        <span>🔵 C = Cold</span>
+        <span>🟠 F = Fire</span>
+        <span>🟢 P = Pause</span>
+        <span>🟣 M = Mirror</span>
+        <span>⚫ D = Disappear</span>
+
+    </div>
+
+    <div id="instructions">
+
+        Player 1:
+        <b>W / S</b>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        Player 2:
+        <b>↑ / ↓</b>
+
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        <b>SPACE = Pause</b>
+
+    </div>
+
+</div>
+
+<div id="overlay">
+
+    <div id="overlayBox">
+
+        <div id="overlayTitle"></div>
+
+        <div id="overlayText"></div>
+
+        <button id="overlayRestart">
+            Play Again
+        </button>
+
+    </div>
+
+</div>
+
+<div id="flash"></div>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+const normalBtn =
+    document.getElementById("normalBtn");
+
+const impossibleBtn =
+    document.getElementById("impossibleBtn");
+
+const multiBtn =
+    document.getElementById("multiBtn");
+
+const restartBtn =
+    document.getElementById("restartBtn");
+
+const overlay =
+    document.getElementById("overlay");
+
+const overlayTitle =
+    document.getElementById("overlayTitle");
+
+const overlayText =
+    document.getElementById("overlayText");
+
+const overlayRestart =
+    document.getElementById("overlayRestart");
+
+const messageEl =
+    document.getElementById("message");
+
+const leftScoreEl =
+    document.getElementById("leftScore");
+
+const rightScoreEl =
+    document.getElementById("rightScore");
+
+const flash =
+    document.getElementById("flash");
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let mode = "impossible";
+
+let running = true;
+let gameOver = false;
+
+let playerScore = 0;
+let cpuScore = 0;
+
+let playerLives = 3;
+
+let paused = false;
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+const keys = {};
+
+document.addEventListener("keydown", event => {
+
+    const key = event.key.toLowerCase();
+
+    keys[key] = true;
+
+    /*
+        Prevent browser scrolling.
+    */
+
+    if (
+        key === "w" ||
+        key === "s" ||
+        key === "arrowup" ||
+        key === "arrowdown" ||
+        key === " "
+    ) {
+        event.preventDefault();
+    }
+
+    /*
+        Pause with SPACE.
+    */
+
+    if (
+        key === " " &&
+        !gameOver
+    ) {
+        paused = !paused;
+
+        setMessage(
+            paused
+                ? "Game paused."
+                : "Game resumed."
+        );
+    }
+});
+
+document.addEventListener("keyup", event => {
+
+    keys[event.key.toLowerCase()] = false;
+
+});
+
+
+/* =========================================================
+   PADDLES
+========================================================= */
+
+const PADDLE_WIDTH = 14;
+const PADDLE_HEIGHT = 100;
+const PADDLE_SPEED = 8;
+
+const leftPaddle = {
+
+    x: 28,
+
+    y:
+        H / 2 -
+        PADDLE_HEIGHT / 2
+
+};
+
+const rightPaddle = {
+
+    x:
+        W -
+        42,
+
+    y:
+        H / 2 -
+        PADDLE_HEIGHT / 2
+
+};
+
+
+/* =========================================================
+   BALLS
+========================================================= */
+
+let balls = [];
+
+
+function createBall(direction = 1) {
+
+    const angle =
+        randomBetween(
+            -0.55,
+            0.55
+        );
+
+    const speed = 6;
+
+    return {
+
+        x: W / 2,
+
+        y: H / 2,
+
+        radius: 9,
+
+        vx:
+            Math.cos(angle) *
+            speed *
+            direction,
+
+        vy:
+            Math.sin(angle) *
+            speed,
+
+        speed: speed,
+
+        active: true,
+
+        /*
+            Used by Pause power.
+        */
+
+        frozenUntil: 0,
+
+        /*
+            When invisible, the ball
+            still exists physically.
+        */
+
+        invisibleUntil: 0,
+
+        /*
+            Temporary visual color.
+        */
+
+        color: "#ffffff",
+
+        colorUntil: 0
+
+    };
+}
+
+
+function resetBall(direction) {
+
+    balls = [
+        createBall(direction)
+    ];
+
+}
+
+
+/* =========================================================
+   POWER UPS
+========================================================= */
+
+const POWER_TYPES = {
+
+    grenade: {
+
+        color: "#ff3030",
+
+        label: "G"
+
+    },
+
+    cold: {
+
+        color: "#38aaff",
+
+        label: "C"
+
+    },
+
+    fire: {
+
+        color: "#ff651c",
+
+        label: "F"
+
+    },
+
+    pause: {
+
+        color: "#39ff70",
+
+        label: "P"
+
+    },
+
+    mirror: {
+
+        color: "#bd55ff",
+
+        label: "M"
+
+    },
+
+    disappear: {
+
+        color: "#eeeeee",
+
+        label: "D"
+
+    }
+
+};
+
+
+let powerUps = [];
+
+let lastPowerSpawn = 0;
+
+
+/* =========================================================
+   POWER SPAWN
+========================================================= */
+
+function spawnPowerUp() {
+
+    if (powerUps.length >= 2) {
+        return;
+    }
+
+    const types =
+        Object.keys(POWER_TYPES);
+
+    const type =
+        types[
+            Math.floor(
+                Math.random() *
+                types.length
+            )
+        ];
+
+    powerUps.push({
+
+        type,
+
+        x:
+            randomBetween(
+                170,
+                W - 170
+            ),
+
+        y:
+            randomBetween(
+                60,
+                H - 60
+            ),
+
+        size: 18,
+
+        rotation:
+            Math.random() *
+            Math.PI
+
+    });
+
+}
+
+
+/* =========================================================
+   COLOR EFFECT
+========================================================= */
+
+function colorEffect(color) {
+
+    flash.style.background = color;
+
+    /*
+        Restart CSS animation.
+    */
+
+    flash.classList.remove("flash");
+
+    void flash.offsetWidth;
+
+    flash.classList.add("flash");
+
+}
+
+
+/* =========================================================
+   POWER ACTIVATION
+========================================================= */
+
+function applyPowerUp(ball, power) {
+
+    /*
+        IMPOSSIBLE MODE:
+
+        Powers only affect the CPU's side.
+
+        The player's balls cannot benefit from them.
+    */
+
+    if (
+        mode === "impossible" &&
+        ball.vx < 0
+    ) {
+        return;
+    }
+
+
+    const type = power.type;
+
+
+    /* =========================
+       GRENADE
+    ========================= */
+
+    if (type === "grenade") {
+
+        colorEffect("#ff2020");
+
+        setMessage(
+            "GRENADE! More balls. Because one wasn't enough."
+        );
+
+        grenade(ball);
+
+        return;
+    }
+
+
+    /* =========================
+       COLD
+    ========================= */
+
+    if (type === "cold") {
+
+        colorEffect("#168cff");
+
+        setMessage(
+            "Cold cube! Everything is moving in slow motion."
+        );
+
+        ball.speed *= 0.5;
+
+        normalizeSpeed(ball);
+
+        ball.color = "#55bbff";
+
+        ball.colorUntil =
+            performance.now() + 2500;
+
+        return;
+    }
+
+
+    /* =========================
+       FIRE
+    ========================= */
+
+    if (type === "fire") {
+
+        colorEffect("#ff4010");
+
+        setMessage(
+            "Fire cube! SPEED!"
+        );
+
+        ball.speed *= 1.7;
+
+        normalizeSpeed(ball);
+
+        ball.color = "#ff4c20";
+
+        ball.colorUntil =
+            performance.now() + 2500;
+
+        return;
+    }
+
+
+    /* =========================
+       PAUSE
+    ========================= */
+
+    if (type === "pause") {
+
+        colorEffect("#35ff70");
+
+        /*
+            FIRST:
+
+            accelerate the ball.
+        */
+
+        ball.speed *= 2.5;
+
+        normalizeSpeed(ball);
+
+        ball.color = "#45ff70";
+
+        ball.colorUntil =
+            performance.now() + 1000;
+
+
+        /*
+            Then pause it.
+        */
+
+        ball.frozenUntil =
+            performance.now() +
+            randomBetween(
+                3000,
+                5000
+            );
+
+        /*
+            Store that we need a
+            random trajectory afterward.
+        */
+
+        ball.randomizeAfterFreeze = true;
+
+        setMessage(
+            "PAUSE! The ball got WAY too fast."
+        );
+
+        return;
+    }
+
+
+    /* =========================
+       MIRROR
+    ========================= */
+
+    if (type === "mirror") {
+
+        colorEffect("#b74cff");
+
+        setMessage(
+            "Mirror! Another ball joins the party."
+        );
+
+        mirrorBall(ball);
+
+        return;
+    }
+
+
+    /* =========================
+       DISAPPEAR
+    ========================= */
+
+    if (type === "disappear") {
+
+        colorEffect("#ffffff");
+
+        setMessage(
+            "Where did the ball go?"
+        );
+
+        ball.invisibleUntil =
+            performance.now() +
+            1000;
+
+        return;
+    }
+
+}
+
+
+/* =========================================================
+   GRENADE
+========================================================= */
+
+function grenade(ball) {
+
+    const originalAngle =
+        Math.atan2(
+            ball.vy,
+            ball.vx
+        );
+
+    for (
+        let i = 0;
+        i < 3;
+        i++
+    ) {
+
+        const angle =
+            originalAngle +
+            randomBetween(
+                -0.7,
+                0.7
+            );
+
+        const speed =
+            Math.max(
+                5,
+                Math.hypot(
+                    ball.vx,
+                    ball.vy
+                )
+            );
+
+        balls.push({
+
+            x: ball.x,
+
+            y: ball.y,
+
+            radius: 7,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            speed,
+
+            active: true,
+
+            frozenUntil: 0,
+
+            invisibleUntil: 0,
+
+            color: "#ff5555",
+
+            colorUntil:
+                performance.now() +
+                2000
+
+        });
+
+    }
+
+    ball.active = false;
+
+}
+
+
+/* =========================================================
+   MIRROR BALL
+========================================================= */
+
+function mirrorBall(ball) {
+
+    const speed =
+        Math.hypot(
+            ball.vx,
+            ball.vy
+        );
+
+    balls.push({
+
+        x: ball.x,
+
+        y: ball.y,
+
+        radius: 8,
+
+        /*
+            EXACT OPPOSITE TRAJECTORY
+        */
+
+        vx: -ball.vx,
+
+        vy: -ball.vy,
+
+        speed,
+
+        active: true,
+
+        frozenUntil: 0,
+
+        invisibleUntil: 0,
+
+        color: "#c55cff",
+
+        colorUntil:
+            performance.now() +
+            2000
+
+    });
+
+}
+
+
+/* =========================================================
+   SPEED
+========================================================= */
+
+function normalizeSpeed(ball) {
+
+    const current =
+        Math.hypot(
+            ball.vx,
+            ball.vy
+        );
+
+    if (current === 0) {
+        return;
+    }
+
+    ball.vx =
+        ball.vx /
+        current *
+        ball.speed;
+
+    ball.vy =
+        ball.vy /
+        current *
+        ball.speed;
+
+}
+
+
+/* =========================================================
+   RANDOM
+========================================================= */
+
+function randomBetween(min, max) {
+
+    return Math.random() *
+        (max - min) +
+        min;
+
+}
+
+
+/* =========================================================
+   CLAMP
+========================================================= */
+
+function clamp(
+    value,
+    min,
+    max
+) {
+
+    return Math.max(
+        min,
+        Math.min(
+            max,
+            value
+        )
+    );
+
+}
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+function updatePlayer() {
+
+    /*
+        ONLY KEYBOARD.
+    */
+
+    if (keys["w"]) {
+
+        leftPaddle.y -=
+            PADDLE_SPEED;
+
+    }
+
+    if (keys["s"]) {
+
+        leftPaddle.y +=
+            PADDLE_SPEED;
+
+    }
+
+    leftPaddle.y =
+        clamp(
+            leftPaddle.y,
+            0,
+            H - PADDLE_HEIGHT
+        );
+
+}
+
+
+/* =========================================================
+   CPU
+========================================================= */
+
+function updateCPU() {
+
+    /*
+        TWO PLAYER MODE
+    */
+
+    if (mode === "multi") {
+
+        if (keys["arrowup"]) {
+
+            rightPaddle.y -=
+                PADDLE_SPEED;
+
+        }
+
+        if (keys["arrowdown"]) {
+
+            rightPaddle.y +=
+                PADDLE_SPEED;
+
+        }
+
+        rightPaddle.y =
+            clamp(
+                rightPaddle.y,
+                0,
+                H - PADDLE_HEIGHT
+            );
+
+        return;
+
+    }
+
+
+    /*
+        Find the relevant ball.
+    */
+
+    const ball =
+        getCPUball();
+
+    if (!ball) {
+        return;
+    }
+
+
+    let targetY;
+
+
+    /*
+        IMPOSSIBLE CPU
+
+        Predicts exact impact point.
+    */
+
+    if (mode === "impossible") {
+
+        targetY =
+            predictBallY(
+                ball,
+                rightPaddle.x
+            );
+
+        /*
+            Almost instantaneous.
+        */
+
+        const center =
+            rightPaddle.y +
+            PADDLE_HEIGHT / 2;
+
+        rightPaddle.y +=
+            (targetY - center) *
+            0.95;
+
+    }
+
+    /*
+        NORMAL CPU
+    */
+
+    else {
+
+        targetY =
+            ball.y;
+
+        const center =
+            rightPaddle.y +
+            PADDLE_HEIGHT / 2;
+
+        const difference =
+            targetY - center;
+
+        rightPaddle.y +=
+            clamp(
+                difference,
+                -PADDLE_SPEED,
+                PADDLE_SPEED
+            );
+
+    }
+
+
+    rightPaddle.y =
+        clamp(
+            rightPaddle.y,
+            0,
+            H - PADDLE_HEIGHT
+        );
+
+}
+
+
+/* =========================================================
+   CPU BALL
+========================================================= */
+
+function getCPUball() {
+
+    const incoming =
+        balls.filter(
+            ball =>
+                ball.active &&
+                ball.vx > 0
+        );
+
+    if (incoming.length === 0) {
+
+        return balls.find(
+            ball =>
+                ball.active
+        );
+
+    }
+
+    incoming.sort(
+        (a, b) =>
+            b.x - a.x
+    );
+
+    return incoming[0];
+
+}
+
+
+/* =========================================================
+   PREDICTION
+========================================================= */
+
+function predictBallY(
+    ball,
+    targetX
+) {
+
+    if (ball.vx <= 0) {
+        return ball.y;
+    }
+
+    const distance =
+        targetX - ball.x;
+
+    const time =
+        distance /
+        Math.abs(ball.vx);
+
+    let y =
+        ball.y +
+        ball.vy *
+        time;
+
+    /*
+        Reflect against walls.
+    */
+
+    while (
+        y < 0 ||
+        y > H
+    ) {
+
+        if (y < 0) {
+            y = -y;
+        }
+
+        if (y > H) {
+            y = 2 * H - y;
+        }
+
+    }
+
+    return y;
+
+}
+
+
+/* =========================================================
+   BALL UPDATE
+========================================================= */
+
+function updateBalls() {
+
+    const now =
+        performance.now();
+
+
+    for (const ball of balls) {
+
+        if (!ball.active) {
+            continue;
+        }
+
+
+        /*
+            PAUSED BALL
+        */
+
+        if (
+            now <
+            ball.frozenUntil
+        ) {
+
+            continue;
+
+        }
+
+
+        /*
+            PAUSE FINISHED
+
+            Now give it a completely
+            new random trajectory.
+        */
+
+        if (
+            ball.randomizeAfterFreeze
+        ) {
+
+            ball.randomizeAfterFreeze =
+                false;
+
+            const angle =
+                randomBetween(
+                    -Math.PI * 0.75,
+                    Math.PI * 0.75
+                );
+
+            ball.speed = 6;
+
+            ball.vx =
+                Math.cos(angle) *
+                ball.speed;
+
+            ball.vy =
+                Math.sin(angle) *
+                ball.speed;
+
+            /*
+                Make sure it keeps
+                moving horizontally.
+            */
+
+            if (
+                Math.abs(ball.vx) < 2
+            ) {
+
+                ball.vx =
+                    ball.vx < 0
+                        ? -3
+                        : 3;
+
+                normalizeSpeed(ball);
+
+            }
+
+        }
+
+
+        /*
+            MOVE
+        */
+
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+
+        /*
+            TOP
+        */
+
+        if (
+            ball.y -
+            ball.radius <= 0 &&
+            ball.vy < 0
+        ) {
+
+            ball.y =
+                ball.radius;
+
+            ball.vy *= -1;
+
+        }
+
+
+        /*
+            BOTTOM
+        */
+
+        if (
+            ball.y +
+            ball.radius >= H &&
+            ball.vy > 0
+        ) {
+
+            ball.y =
+                H -
+                ball.radius;
+
+            ball.vy *= -1;
+
+        }
+
+
+        /*
+            LEFT PADDLE
+        */
+
+        if (
+
+            ball.vx < 0 &&
+
+            ball.x -
+            ball.radius <=
+            leftPaddle.x +
+            PADDLE_WIDTH &&
+
+            ball.x +
+            ball.radius >=
+            leftPaddle.x &&
+
+            ball.y >=
+            leftPaddle.y &&
+
+            ball.y <=
+            leftPaddle.y +
+            PADDLE_HEIGHT
+
+        ) {
+
+            ball.x =
+                leftPaddle.x +
+                PADDLE_WIDTH +
+                ball.radius;
+
+            bounce(
+                ball,
+                leftPaddle,
+                true
+            );
+
+            checkPowerUp(ball);
+
+        }
+
+
+        /*
+            RIGHT PADDLE
+        */
+
+        if (
+
+            ball.vx > 0 &&
+
+            ball.x +
+            ball.radius >=
+            rightPaddle.x &&
+
+            ball.x -
+            ball.radius <=
+            rightPaddle.x +
+            PADDLE_WIDTH &&
+
+            ball.y >=
+            rightPaddle.y &&
+
+            ball.y <=
+            rightPaddle.y +
+            PADDLE_HEIGHT
+
+        ) {
+
+            ball.x =
+                rightPaddle.x -
+                ball.radius;
+
+            bounce(
+                ball,
+                rightPaddle,
+                false
+            );
+
+            checkPowerUp(ball);
+
+        }
+
+
+        /*
+            POWER-UP COLLISION
+        */
+
+        checkPowerUp(ball);
+
+
+        /*
+            LEFT SIDE MISSED
+        */
+
+        if (
+            ball.x <
+            -60
+        ) {
+
+            ball.active = false;
+
+            if (
+                mode ===
+                "impossible"
+            ) {
+
+                playerLives--;
+
+                setMessage(
+                    sarcasticComment()
+                );
+
+                if (
+                    playerLives <= 0
+                ) {
+
+                    endGame(false);
+
+                } else {
+
+                    resetBall(1);
+
+                }
+
+            } else {
+
+                cpuScore++;
+
+                setMessage(
+                    "CPU scores."
+                );
+
+                resetBall(-1);
+
+            }
+
+        }
+
+
+        /*
+            RIGHT SIDE MISSED
+        */
+
+        if (
+            ball.x >
+            W + 60
+        ) {
+
+            ball.active = false;
+
+            playerScore++;
+
+            setMessage(
+                "Nice shot."
+            );
+
+            resetBall(-1);
+
+        }
+
+    }
+
+
+    balls =
+        balls.filter(
+            ball =>
+                ball.active
+        );
+
+
+    if (
+        balls.length === 0 &&
+        !gameOver
+    ) {
+
+        resetBall(
+            Math.random() < 0.5
+                ? -1
+                : 1
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   BOUNCE
+========================================================= */
+
+function bounce(
+    ball,
+    paddle,
+    playerSide
+) {
+
+    const center =
+        paddle.y +
+        PADDLE_HEIGHT / 2;
+
+    const relative =
+        (
+            ball.y -
+            center
+        ) /
+        (PADDLE_HEIGHT / 2);
+
+    const maxAngle =
+        Math.PI / 3;
+
+    const angle =
+        relative *
+        maxAngle;
+
+    const direction =
+        playerSide
+            ? 1
+            : -1;
+
+    /*
+        Small speed increase.
+    */
+
+    ball.speed =
+        clamp(
+            ball.speed *
+            1.015,
+            5,
+            16
+        );
+
+    ball.vx =
+        Math.cos(angle) *
+        ball.speed *
+        direction;
+
+    ball.vy =
+        Math.sin(angle) *
+        ball.speed;
+
+}
+
+
+/* =========================================================
+   POWER COLLISION
+========================================================= */
+
+function checkPowerUp(ball) {
+
+    for (
+        let i =
+            powerUps.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const power =
+            powerUps[i];
+
+        const distance =
+            Math.hypot(
+                ball.x -
+                power.x,
+
+                ball.y -
+                power.y
+            );
+
+        if (
+            distance <
+            ball.radius +
+            power.size
+        ) {
+
+            powerUps.splice(
+                i,
+                1
+            );
+
+            applyPowerUp(
+                ball,
+                power
+            );
+
+            return;
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   POWER SPAWNING
+========================================================= */
+
+function updatePowerUps() {
+
+    const now =
+        performance.now();
+
+    if (
+        now -
+        lastPowerSpawn >
+        randomBetween(
+            4500,
+            8000
+        )
+    ) {
+
+        spawnPowerUp();
+
+        lastPowerSpawn = now;
+
+    }
+
+
+    for (
+        const power of powerUps
+    ) {
+
+        power.rotation +=
+            0.025;
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW BACKGROUND
+========================================================= */
+
+function drawBackground() {
+
+    /*
+        BLACK BASE
+    */
+
+    ctx.fillStyle =
+        "#000000";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+        LEFT RED HALF
+    */
+
+    const redGradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            W / 2,
+            0
+        );
+
+    redGradient.addColorStop(
+        0,
+        "rgba(130,0,0,0.15)"
+    );
+
+    redGradient.addColorStop(
+        1,
+        "rgba(130,0,0,0.02)"
+    );
+
+    ctx.fillStyle =
+        redGradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        W / 2,
+        H
+    );
+
+
+    /*
+        RIGHT BLUE HALF
+    */
+
+    const blueGradient =
+        ctx.createLinearGradient(
+            W / 2,
+            0,
+            W,
+            0
+        );
+
+    blueGradient.addColorStop(
+        0,
+        "rgba(0,50,150,0.02)"
+    );
+
+    blueGradient.addColorStop(
+        1,
+        "rgba(0,70,180,0.16)"
+    );
+
+    ctx.fillStyle =
+        blueGradient;
+
+    ctx.fillRect(
+        W / 2,
+        0,
+        W / 2,
+        H
+    );
+
+
+    /*
+        CENTER LINE
+    */
+
+    ctx.setLineDash([
+        10,
+        12
+    ]);
+
+    ctx.strokeStyle =
+        "#222";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        W / 2,
+        0
+    );
+
+    ctx.lineTo(
+        W / 2,
+        H
+    );
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+}
+
+
+/* =========================================================
+   DRAW PADDLES
+========================================================= */
+
+function drawPaddle(
+    paddle,
+    color
+) {
+
+    ctx.save();
+
+    ctx.shadowBlur = 18;
+
+    ctx.shadowColor =
+        color;
+
+    ctx.fillStyle =
+        color;
+
+    roundRect(
+        paddle.x,
+        paddle.y,
+        PADDLE_WIDTH,
+        PADDLE_HEIGHT,
+        6
+    );
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   DRAW BALL
+========================================================= */
+
+function drawBall(ball) {
+
+    const now =
+        performance.now();
+
+    /*
+        Invisible power.
+    */
+
+    if (
+        now <
+        ball.invisibleUntil
+    ) {
+        return;
+    }
+
+
+    ctx.save();
+
+    ctx.shadowBlur = 18;
+
+    ctx.shadowColor =
+        ball.color;
+
+    ctx.fillStyle =
+        ball.color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   DRAW POWER UPS
+========================================================= */
+
+function drawPowerUps() {
+
+    for (
+        const power of powerUps
+    ) {
+
+        const data =
+            POWER_TYPES[
+                power.type
+            ];
+
+        ctx.save();
+
+        ctx.translate(
+            power.x,
+            power.y
+        );
+
+        ctx.rotate(
+            power.rotation
+        );
+
+        ctx.shadowBlur = 15;
+
+        ctx.shadowColor =
+            data.color;
+
+        ctx.fillStyle =
+            data.color;
+
+        roundRect(
+            -power.size,
+            -power.size,
+            power.size * 2,
+            power.size * 2,
+            5
+        );
+
+        ctx.rotate(
+            -power.rotation
+        );
+
+        ctx.fillStyle =
+            "#000";
+
+        ctx.font =
+            "bold 18px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            data.label,
+            0,
+            1
+        );
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================================================
+   ROUND RECTANGLE
+========================================================= */
+
+function roundRect(
+    x,
+    y,
+    width,
+    height,
+    radius
+) {
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x + radius,
+        y
+    );
+
+    ctx.arcTo(
+        x + width,
+        y,
+        x + width,
+        y + height,
+        radius
+    );
+
+    ctx.arcTo(
+        x + width,
+        y + height,
+        x,
+        y + height,
+        radius
+    );
+
+    ctx.arcTo(
+        x,
+        y + height,
+        x,
+        y,
+        radius
+    );
+
+    ctx.arcTo(
+        x,
+        y,
+        x + width,
+        y,
+        radius
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+}
+
+
+/* =========================================================
+   SARCASTIC COMMENTS
+========================================================= */
+
+const sarcasticComments = [
+
+    "Wow. Incredible technique.",
+
+    "The CPU would like to thank you.",
+
+    "Have you considered chess?",
+
+    "That was almost impressive.",
+
+    "The ball has filed a complaint.",
+
+    "Three tries. Three opportunities. Interesting.",
+
+    "The CPU didn't even get nervous.",
+
+    "Congratulations! Gravity wins again.",
+
+    "Excellent miss.",
+
+    "Maybe try hitting the ball next time.",
+
+    "The CPU remains undefeated.",
+
+    "Don't worry. Nobody saw that. Except me."
+
+];
+
+
+function sarcasticComment() {
+
+    return sarcasticComments[
+        Math.floor(
+            Math.random() *
+            sarcasticComments.length
+        )
+    ];
+
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD() {
+
+    if (
+        mode ===
+        "impossible"
+    ) {
+
+        leftScoreEl.textContent =
+            `Player tries: ${playerLives}`;
+
+        rightScoreEl.textContent =
+            `CPU: ${cpuScore}`;
+
+    }
+
+    else if (
+        mode === "multi"
+    ) {
+
+        leftScoreEl.textContent =
+            `Player 1: ${playerScore}`;
+
+        rightScoreEl.textContent =
+            `Player 2: ${cpuScore}`;
+
+    }
+
+    else {
+
+        leftScoreEl.textContent =
+            `Player: ${playerScore}`;
+
+        rightScoreEl.textContent =
+            `CPU: ${cpuScore}`;
+
+    }
+
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function endGame(
+    playerWon
+) {
+
+    gameOver = true;
+    running = false;
+
+    overlay.style.display =
+        "flex";
+
+    if (playerWon) {
+
+        overlayTitle.textContent =
+            "YOU WIN";
+
+        overlayText.textContent =
+            "Somehow, you defeated the machine.";
+
+    }
+
+    else {
+
+        overlayTitle.textContent =
+            "GAME OVER";
+
+        overlayText.textContent =
+            sarcasticComment() +
+            " You used all three tries.";
+
+    }
+
+}
+
+
+/* =========================================================
+   MODE
+========================================================= */
+
+function setMode(
+    newMode
+) {
+
+    mode = newMode;
+
+    normalBtn.classList.toggle(
+        "active",
+        mode === "normal"
+    );
+
+    impossibleBtn.classList.toggle(
+        "active",
+        mode === "impossible"
+    );
+
+    multiBtn.classList.toggle(
+        "active",
+        mode === "multi"
+    );
+
+
+    restartGame();
+
+
+    if (
+        mode === "normal"
+    ) {
+
+        setMessage(
+            "Normal mode. The CPU is allowed to lose."
+        );
+
+    }
+
+    if (
+        mode === "impossible"
+    ) {
+
+        setMessage(
+            "Impossible mode. The CPU does not make mistakes."
+        );
+
+    }
+
+    if (
+        mode === "multi"
+    ) {
+
+        setMessage(
+            "Two players. No CPU. No excuses."
+        );
+
+    }
+
+}
+
+
+normalBtn.onclick =
+    () => setMode("normal");
+
+impossibleBtn.onclick =
+    () => setMode("impossible");
+
+multiBtn.onclick =
+    () => setMode("multi");
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function setMessage(
+    text
+) {
+
+    messageEl.textContent =
+        text;
+
+}
+
+
+/* =========================================================
+   RESTART
+========================================================= */
+
+function restartGame() {
+
+    overlay.style.display =
+        "none";
+
+    running = true;
+
+    gameOver = false;
+
+    paused = false;
+
+    playerScore = 0;
+
+    cpuScore = 0;
+
+    playerLives = 3;
+
+    powerUps = [];
+
+    lastPowerSpawn =
+        performance.now();
+
+    leftPaddle.y =
+        H / 2 -
+        PADDLE_HEIGHT / 2;
+
+    rightPaddle.y =
+        H / 2 -
+        PADDLE_HEIGHT / 2;
+
+    resetBall(
+        Math.random() <
+            0.5
+            ? -1
+            : 1
+    );
+
+    updateHUD();
+
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+restartBtn.onclick =
+    restartGame;
+
+overlayRestart.onclick =
+    restartGame;
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function gameLoop() {
+
+    if (
+        running &&
+        !gameOver &&
+        !paused
+    ) {
+
+        updatePlayer();
+
+        updateCPU();
+
+        updatePowerUps();
+
+        updateBalls();
+
+        updateHUD();
+
+    }
+
+
+    draw();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw() {
+
+    drawBackground();
+
+    drawPowerUps();
+
+    /*
+        Left paddle = red
+        Right paddle = blue
+    */
+
+    drawPaddle(
+        leftPaddle,
+        "#ff3030"
+    );
+
+    drawPaddle(
+        rightPaddle,
+        "#308cff"
+    );
+
+
+    for (
+        const ball of balls
+    ) {
+
+        drawBall(ball);
+
+    }
+
+
+    /*
+        Frozen ball indicator.
+    */
+
+    const now =
+        performance.now();
+
+    for (
+        const ball of balls
+    ) {
+
+        if (
+            now <
+            ball.frozenUntil
+        ) {
+
+            ctx.save();
+
+            ctx.strokeStyle =
+                "#39ff70";
+
+            ctx.lineWidth = 2;
+
+            ctx.globalAlpha =
+                0.75;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                ball.x,
+                ball.y,
+                ball.radius + 10,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.stroke();
+
+            ctx.restore();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+restartGame();
+
+requestAnimationFrame(
+    gameLoop
+);
+
+</script>
+
+</body>
+</html>

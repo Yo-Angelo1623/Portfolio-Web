@@ -1,0 +1,2244 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101922">
+  <title>CANCHA BRAVA — fútbol callejero arcade</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f5efd8;
+      --muted: #a9b5ae;
+      --panel: #17252a;
+      --edge: #35494a;
+      --lime: #d8f36a;
+      --orange: #ff9c51;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      padding: 24px;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 50% 0%, #26393a 0, #121d23 48%, #0c141b 100%);
+      font: 14px/1.45 "Courier New", monospace;
+    }
+    button, select { font: inherit; }
+    .shell { width: min(1480px, 100%); margin: 0 auto; }
+    .masthead {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 0 0 14px;
+    }
+    .eyebrow { margin: 0 0 4px; color: var(--lime); font-size: 11px; letter-spacing: .18em; }
+    h1 { margin: 0; font-size: clamp(26px, 5vw, 43px); line-height: 1; letter-spacing: -.06em; }
+    .subtitle { max-width: 380px; margin: 0; color: var(--muted); text-align: right; }
+    .game-panel {
+      padding: 12px;
+      border: 1px solid #495b50;
+      background: #111d20;
+      box-shadow: 0 12px 48px #05090bcc, inset 0 0 0 3px #1d2b2d;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      min-height: 40px;
+      padding: 0 4px 10px;
+    }
+    .toolbar label { color: var(--muted); }
+    select, .toolbar button {
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid #506357;
+      border-radius: 2px;
+      color: var(--ink);
+      background: #21312e;
+    }
+    .toolbar button { cursor: pointer; color: #151c17; background: var(--lime); font-weight: bold; }
+    .toolbar .pause-button { margin-left: auto; color: var(--ink); background: #293b37; border-color: #63786b; }
+    .toolbar .pause-button:hover { background: #3c5146; }
+    .toolbar button:hover { background: #e7ff83; }
+    #status { margin-left: 0; color: var(--lime); }
+    .canvas-wrap { position: relative; width: 100%; overflow: hidden; background: #17282a; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+    .game-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: #07110fd9;
+    }
+    .game-overlay[hidden] { display: none; }
+    .overlay-card {
+      width: min(520px, 100%);
+      max-height: 100%;
+      overflow: auto;
+      padding: clamp(16px, 3vw, 28px);
+      border: 2px solid var(--lime);
+      background: #152321;
+      box-shadow: 0 12px 50px #000b, inset 0 0 0 4px #21332e;
+    }
+    .overlay-card h2 { margin: 0 0 10px; color: var(--lime); font-size: clamp(20px, 3vw, 27px); }
+    .overlay-card p, .overlay-card li { color: #c5d0c4; font-size: 13px; }
+    .overlay-card ul { margin: 10px 0; padding-left: 20px; }
+    .overlay-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 17px; }
+    .overlay-actions button {
+      min-height: 37px;
+      padding: 7px 12px;
+      border: 1px solid #71856f;
+      border-radius: 2px;
+      color: var(--ink);
+      background: #263932;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .overlay-actions button.primary { color: #11180f; border-color: var(--lime); background: var(--lime); }
+    .overlay-actions button:hover { filter: brightness(1.15); }
+    kbd {
+      min-width: 25px;
+      padding: 1px 5px;
+      border: 1px solid #607266;
+      border-bottom-width: 2px;
+      border-radius: 2px;
+      color: var(--ink);
+      background: #263632;
+      text-align: center;
+      font: bold 11px "Courier New", monospace;
+    }
+    @media (max-width: 680px) {
+      body { padding: 12px; }
+      .masthead { display: block; }
+      .subtitle { margin-top: 8px; text-align: left; }
+      #status { width: 100%; margin-left: 0; }
+      .game-panel { padding: 7px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="../../juegos.html" style="position: absolute; top: 16px; left: 16px; z-index: 9999; padding: 10px 14px; border: 1px solid #d8f36a; color: #f5efd8; background: #17252a; font: bold 13px 'Courier New', monospace; text-decoration: none;">Volver al Arcade</a>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">FÚTBOL DE BARRIO · PIXELES Y ACTITUD</p>
+        <h1>CANCHA BRAVA</h1>
+      </div>
+      <p class="subtitle">Elige tu equipo, rompe la cintura y haz que la calle te recuerde.</p>
+    </header>
+
+    <section class="game-panel" aria-label="Partido de fútbol arcade">
+      <div class="toolbar">
+        <label for="team-size">Formato</label>
+        <select id="team-size" aria-label="Jugadores por equipo">
+          <option value="1">1 vs 1</option><option value="2">2 vs 2</option>
+          <option value="3" selected>3 vs 3</option><option value="4">4 vs 4</option>
+          <option value="5">5 vs 5</option><option value="6">6 vs 6</option>
+          <option value="7">7 vs 7</option>
+        </select>
+        <button id="restart" type="button">NUEVO PARTIDO</button>
+        <button id="pause-button" class="pause-button" type="button" aria-label="Pausar partido">PAUSA</button>
+        <span id="status" role="status">¡A jugar!</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="pitch" width="960" height="540" aria-label="Cancha horizontal de fútbol; usa las flechas y las teclas indicadas"></canvas>
+        <section id="game-overlay" class="game-overlay" aria-live="polite" hidden>
+          <div class="overlay-card">
+            <h2 id="overlay-title"></h2>
+            <div id="overlay-content"></div>
+            <div id="overlay-actions" class="overlay-actions"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("pitch");
+      const ctx = canvas.getContext("2d");
+      const status = document.getElementById("status");
+      const teamSelect = document.getElementById("team-size");
+      const overlay = document.getElementById("game-overlay");
+      const overlayTitle = document.getElementById("overlay-title");
+      const overlayContent = document.getElementById("overlay-content");
+      const overlayActions = document.getElementById("overlay-actions");
+      const W = canvas.width;
+      const H = canvas.height;
+      const field = { left: 66, right: 894, top: 70, bottom: 470, goalTop: 195, goalBottom: 345 };
+      const keys = new Set();
+      const pressed = [];
+      const colors = [{ shirt: "#45d9e6", dark: "#137987", glow: "#8cffff" }, { shirt: "#ff7d4c", dark: "#9e3829", glow: "#ffc071" }];
+      const outfieldFormations = {
+        1: [[0.34, 0]],
+        2: [[0.3, -0.28], [0.3, 0.28]],
+        3: [[0.25, 0], [0.52, -0.32], [0.52, 0.32]],
+        4: [[0.22, -0.22], [0.22, 0.22], [0.55, -0.22], [0.55, 0.22]],
+        5: [[0.2, 0], [0.48, -0.34], [0.48, 0.34], [0.7, -0.18], [0.7, 0.18]],
+        6: [[0.2, -0.32], [0.2, 0.32], [0.46, 0], [0.62, -0.38], [0.62, 0], [0.62, 0.38]]
+      };
+      const state = {
+        count: 3, players: [], ball: { x: 480, y: 300, vx: 0, vy: 0, z: 0, vz: 0, owner: null },
+        score: [0, 0], selected: 0, time: 180, lastTime: 0, phase: "play", setPiece: null,
+        message: "", messageTime: 0, charge: null, specialCharge: null, specialShotPending: null, lastTrick: 0, trickText: "", trickTime: 0,
+        pressure: 0, slide: 0, tackle: 0, swap: 0, aiKick: 0, possession: 0,
+        lastTouch: null, gameOver: false, paused: false, overlay: "", tutorialStep: 0, restartTimer: 0,
+        exited: false, particles: [], motionTime: 0, practice: false, practiceSnapshot: null,
+        practiceStep: 0, practiceTimer: 0
+      };
+
+      function createTeams(count) {
+        state.count = count;
+        state.players = [];
+        const hasGoalkeeper = count >= 2;
+        const formation = outfieldFormations[count - (hasGoalkeeper ? 1 : 0)];
+        for (let side = 0; side < 2; side++) {
+          const attackDirection = side === 0 ? 1 : -1;
+          if (hasGoalkeeper) {
+            const keeperX = side === 0 ? field.left + 22 : field.right - 22;
+            state.players.push({
+              id: side * count, side, index: 0, goalkeeper: true,
+              x: keeperX, y: 270, homeX: keeperX, homeY: 270,
+              vx: 0, vy: 0, dirX: attackDirection, dirY: 0,
+              stamina: 1, action: 0, actionStyle: "", control: "", mash: 0, lastMash: 0,
+              bicycleCount: 0, elasticaPendingUntil: 0, rouletteReadyAt: 0, trickPose: "", trickPoseUntil: 0, aiKick: 0, keeperHoldTime: 0
+            });
+          }
+          formation.forEach((spot, formationIndex) => {
+            const index = formationIndex + (hasGoalkeeper ? 1 : 0);
+            const attackDirection = side === 0 ? 1 : -1;
+            const player = {
+              id: side * count + index, side, index, goalkeeper: false,
+              x: 480 + spot[0] * 330 * attackDirection,
+              y: 270 + spot[1] * 145,
+              homeX: 480 + spot[0] * 330 * attackDirection,
+              homeY: 270 + spot[1] * 145, vx: 0, vy: 0,
+              dirX: attackDirection, dirY: 0, stamina: 1, action: 0, control: "",
+              mash: 0, lastMash: 0, bicycleCount: 0, elasticaPendingUntil: 0,
+              rouletteReadyAt: 0, trickPose: "", trickPoseUntil: 0, aiKick: 0, keeperHoldTime: 0
+            };
+            state.players.push(player);
+          });
+        }
+        state.selected = count >= 2 ? 1 : 0;
+        resetKickoff(0);
+      }
+
+      function resetKickoff(side, breather = 0) {
+        state.ball = { x: 480, y: 300, vx: 0, vy: 0, z: 0, vz: 0, owner: null };
+        state.players.forEach(player => {
+          player.x = player.homeX;
+          player.y = player.homeY;
+          player.vx = 0;
+          player.vy = 0;
+          player.stamina = Math.max(player.stamina, 0.65);
+        });
+        const kickoff = state.players.find(player => player.side === side && !player.goalkeeper) || state.players.find(player => player.side === side);
+        if (kickoff) {
+          kickoff.x = side === 0 ? 465 : 495;
+          kickoff.y = 300;
+          state.ball.owner = kickoff.id;
+          state.lastTouch = side;
+        }
+        state.phase = breather > 0 ? "restartPause" : "play";
+        state.restartTimer = breather;
+        state.setPiece = null;
+        state.charge = null;
+        state.specialCharge = null;
+        state.specialShotPending = null;
+      }
+
+      function restartMatch() {
+        state.score = [0, 0];
+        state.time = 180;
+        state.gameOver = false;
+        state.paused = false;
+        state.exited = false;
+        state.message = "";
+        state.trickText = "";
+        state.specialShotPending = null;
+        createTeams(Number(teamSelect.value));
+        status.textContent = "¡A jugar!";
+        showTutorial();
+      }
+
+      function say(text, duration = 1.3) {
+        state.message = text;
+        state.messageTime = duration;
+        status.textContent = text;
+      }
+
+      function showOverlay(mode, title, content, actions) {
+        state.overlay = mode;
+        overlayTitle.textContent = title;
+        overlayContent.innerHTML = content;
+        overlayActions.replaceChildren();
+        actions.forEach(action => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = action.label;
+          if (action.primary) button.className = "primary";
+          button.addEventListener("click", action.run);
+          overlayActions.append(button);
+        });
+        overlay.hidden = false;
+      }
+
+      function hideOverlay() {
+        state.overlay = "";
+        overlay.hidden = true;
+      }
+
+      function pauseGame() {
+        if (state.exited) return;
+        state.paused = true;
+        keys.clear();
+        state.charge = null;
+        state.specialCharge = null;
+        state.specialShotPending = null;
+        showOverlay("pause", "PARTIDO EN PAUSA", "<p>El reloj y la jugada están detenidos.</p>", [
+          { label: "Continuar", primary: true, run: () => { state.paused = false; hideOverlay(); } },
+          { label: "Reiniciar", run: restartMatch },
+          { label: "Controles", run: showControls },
+          { label: "Salir", run: showStart }
+        ]);
+      }
+
+      function showControls() {
+        const returnTo = state.overlay === "start" ? "start" : "pause";
+        state.paused = true;
+        showOverlay("controls", "GUÍA COMPLETA DE CONTROLES",
+          "<ul>" +
+          "<li><strong>Mover:</strong> solo flechas. La dirección que llevas también apunta el pase o el tiro.</li>" +
+          "<li><strong>Con balón:</strong> mantén X para cargar el tiro al arco y suelta para disparar. Mantén Z y suelta para pasar a un compañero; cuanto más tiempo, más fuerza. El pase no se dirige al arco y el receptor aparece marcado. En 1 vs 1 no hay compañero y el pase no se ejecuta.</li>" +
+          "<li><strong>Sin balón:</strong> Z intenta un quite normal; X hace una barrida con más alcance y recuperación más lenta. Apunta hacia el balón y evita lanzarte contra el arquero cuando lo controla. Durante un regate o jugada técnica, el rival solo podrá intentar una barrida; si falla, puede cometer falta.</li>" +
+          "<li><strong>W — pase especial:</strong> toca y suelta para un pase raso diagonal; mantenlo al menos 0,32 s y suelta para un pase aéreo.</li>" +
+          "<li><strong>E — remate especial:</strong> pulsa una vez para volea al arco; pulsa E otra vez dentro de 0,42 s para hacer una chilena.</li>" +
+          "<li><strong>R y T:</strong> toque breve (menos de 0,28 s) para pase de rabona (R) o de taco (T); mantén al menos 0,28 s y suelta para rematar con esa técnica. La barra marca el cambio de pase a tiro. <strong>F</strong> hace una vaselina y <strong>V</strong> un golpe de hombro para proteger/empujar en carrera.</li>" +
+          "<li><strong>Cambiar jugador:</strong> pulsa Espacio para pasar el control a tu siguiente compañero.</li>" +
+          "<li><strong>Presión:</strong> mantén Shift mientras te acercas al rival para acelerar la presión.</li>" +
+          "<li><strong>Regates:</strong> cada C mueve el balón ligeramente arriba o abajo al alternar la pierna de la bicicleta; A necesita dos pulsaciones antes de 2 segundos para completar la elástica; S hace un enganche diagonal; D hace girar el balón alrededor del jugador y tiene 10 segundos de espera. Mientras se ejecuta una jugada técnica, el rival no puede quitarte el balón con un quite normal.</li>" +
+          "<li><strong>Otras jugadas:</strong> Y/P/O/I son variantes de pase; Q/E/R preparan controles al recibir cuando no tienes el balón. El tipo preparado se muestra sobre tu jugador.</li>" +
+          "<li><strong>Líneas y faltas:</strong> el balón rebota en las líneas y sigue en juego; no hay saques laterales, de esquina ni de arco. Las faltas se reanudan con Z; en tiros libres de ataque o penales puedes mantener X para tirar.</li>" +
+          "<li><strong>Pausa:</strong> Escape o el botón PAUSA abre este menú.</li>" +
+          "</ul>", [
+            { label: "Practicar jugadas especiales", primary: true, run: showPracticeIntro },
+            { label: "Volver", run: () => returnTo === "start" ? showStart() : pauseGame() }
+          ]);
+      }
+
+      function showPracticeIntro() {
+        state.paused = true;
+        showOverlay("practice-intro", "TUTORIAL ESPECIAL DE JUGADAS",
+          "<p>La práctica está ordenada por fases: primero regates y protección individual; luego recibirás pases de un compañero para probar controles; después le devolverás distintos pases y terminarás con remates especiales.</p>" +
+          "<ul><li><kbd>C</kbd> bicicleta: repite para alternar piernas y mover ligeramente el balón arriba/abajo.</li>" +
+          "<li><kbd>A</kbd> elástica: pulsa dos veces antes de 2 segundos.</li>" +
+          "<li><kbd>S</kbd> enganche: usa arriba/abajo para escoger la diagonal.</li>" +
+          "<li><kbd>D</kbd> ruleta: el balón gira alrededor de tu jugador; <kbd>V</kbd> golpe de hombro.</li>" +
+          "<li>Recibe con <kbd>Q</kbd>/<kbd>E</kbd>/<kbd>R</kbd>; pasa con <kbd>W</kbd>/<kbd>R</kbd>/<kbd>T</kbd>.</li>" +
+          "<li>Remata con <kbd>E</kbd>, <kbd>R</kbd>, <kbd>T</kbd> o <kbd>F</kbd>. R/T hacen pase al toque y tiro al mantenerlos al menos 0,28 s.</li></ul>" +
+          "<p>Usa las flechas para moverte y apuntar. Escape vuelve a Controles.</p>", [
+            { label: "Empezar práctica", primary: true, run: startPractice },
+            { label: "Volver a controles", run: showControls }
+          ]);
+      }
+
+      const practiceExercises = [
+        ["BICICLETA", "REGATE 1/5 · PULSA C PARA BICICLETA"],
+        ["ELÁSTICA", "REGATE 2/5 · PULSA A DOS VECES EN 2 SEGUNDOS"],
+        ["ENGANCHE", "REGATE 3/5 · PULSA S Y ELIGE ARRIBA/ABAJO CON FLECHAS"],
+        ["RULETA", "REGATE 4/5 · PULSA D PARA HACER GIRAR EL BALÓN A TU ALREDEDOR"],
+        ["HOMBRO", "REGATE 5/5 · PULSA V PARA EL GOLPE DE HOMBRO"],
+        ["CONTROL_PIE", "RECEPCIÓN 1/3 · PREPARA Q Y RECIBE EL PASE DEL COMPAÑERO"],
+        ["CONTROL_PECHO", "RECEPCIÓN 2/3 · PREPARA E Y RECIBE EL PASE DEL COMPAÑERO"],
+        ["CONTROL_TALÓN", "RECEPCIÓN 3/3 · PREPARA R Y RECIBE EL PASE DEL COMPAÑERO"],
+        ["PASE_DIAGONAL", "PASE 1/4 · TOCA W PARA PASAR RASO EN DIAGONAL"],
+        ["PASE_AÉREO", "PASE 2/4 · MANTÉN W Y SUELTA PARA PASAR POR AIRE"],
+        ["PASE_RABONA", "PASE 3/4 · TOCA R PARA DAR UN PASE DE RABONA"],
+        ["PASE_TACO", "PASE 4/4 · TOCA T PARA DAR UN PASE DE TACÓN"],
+        ["VOLEA", "REMATE 1/5 · PULSA E UNA VEZ PARA LA VOLEA"],
+        ["CHILENA", "REMATE 2/5 · PULSA E DOS VECES RÁPIDO PARA LA CHILENA"],
+        ["TIRO_RABONA", "REMATE 3/5 · MANTÉN R Y SUELTA PARA EL TIRO DE RABONA"],
+        ["TIRO_TACO", "REMATE 4/5 · MANTÉN T Y SUELTA PARA EL TIRO DE TACÓN"],
+        ["VASELINA", "REMATE 5/5 · PULSA F PARA PICAR EL BALÓN"],
+        ["COMPLETADO", "¡TUTORIAL ESPECIAL COMPLETADO! ESC PARA VOLVER A CONTROLES"]
+      ];
+
+      function startPractice() {
+        state.practiceSnapshot = {
+          count: state.count,
+          players: state.players.map(player => ({ ...player })),
+          ball: { ...state.ball },
+          score: [...state.score],
+          selected: state.selected,
+          time: state.time,
+          phase: state.phase,
+          setPiece: state.setPiece ? { ...state.setPiece } : null,
+          gameOver: state.gameOver,
+          message: state.message,
+          messageTime: state.messageTime
+        };
+        state.practice = true;
+        state.paused = false;
+        state.gameOver = false;
+        state.phase = "play";
+        state.time = 180;
+        state.score = [0, 0];
+        state.count = 2;
+        const trainee = {
+          id: 0, side: 0, index: 0, goalkeeper: false,
+          x: 700, y: 270, homeX: 700, homeY: 270, vx: 0, vy: 0,
+          dirX: 1, dirY: 0, stamina: 1, action: 0, actionStyle: "",
+          control: "", bicycleCount: 0, elasticaPendingUntil: 0,
+          rouletteReadyAt: 0, trickPose: "", trickPoseUntil: 0
+        };
+        const teammate = {
+          id: 1, side: 0, index: 1, goalkeeper: false,
+          x: 560, y: 270, homeX: 560, homeY: 270, vx: 0, vy: 0,
+          dirX: 1, dirY: 0, stamina: 1, action: 0, actionStyle: "",
+          control: "", bicycleCount: 0, elasticaPendingUntil: 0,
+          rouletteReadyAt: 0, trickPose: "", trickPoseUntil: 0
+        };
+        const dummy = {
+          id: 2, side: 1, index: 0, goalkeeper: false,
+          x: 820, y: 270, homeX: 820, homeY: 270, vx: 0, vy: 0,
+          dirX: -1, dirY: 0, stamina: 1, action: 0, actionStyle: "",
+          control: "", bicycleCount: 0, elasticaPendingUntil: 0,
+          rouletteReadyAt: 0, trickPose: "", trickPoseUntil: 0
+        };
+        state.players = [trainee, teammate, dummy];
+        state.selected = 0;
+        state.ball = { x: 718, y: 270, vx: 0, vy: 0, z: 0, vz: 0, owner: 0 };
+        state.practiceStep = 0;
+        state.charge = null;
+        state.specialCharge = null;
+        state.practiceTimer = 0;
+        keys.clear();
+        setPracticePrompt();
+        hideOverlay();
+      }
+
+      function finishPractice() {
+        const snapshot = state.practiceSnapshot;
+        if (!snapshot) return;
+        state.practice = false;
+        state.practiceSnapshot = null;
+        state.players = snapshot.players;
+        state.count = snapshot.count;
+        state.ball = snapshot.ball;
+        state.score = snapshot.score;
+        state.selected = snapshot.selected;
+        state.time = snapshot.time;
+        state.phase = snapshot.phase;
+        state.setPiece = snapshot.setPiece;
+        state.gameOver = snapshot.gameOver;
+        state.message = snapshot.message;
+        state.messageTime = snapshot.messageTime;
+        state.charge = null;
+        state.specialCharge = null;
+        state.specialShotPending = null;
+        keys.clear();
+        state.paused = true;
+        showControls();
+      }
+
+      function setPracticePrompt() {
+        say(practiceExercises[state.practiceStep][1], 999);
+      }
+
+      function completePracticeMove(move) {
+        if (!state.practice) return;
+        const expected = practiceExercises[state.practiceStep][0];
+        if (move !== expected) return;
+        const completedStep = state.practiceStep;
+        if (completedStep >= 5 && completedStep <= 7) {
+          const trainee = playerById(0);
+          if (trainee) trainee.control = "";
+        }
+        state.practiceStep = Math.min(state.practiceStep + 1, practiceExercises.length - 1);
+        const trainee = playerById(0);
+        const teammate = playerById(1);
+        state.practiceTimer = 0.75;
+        if (state.practiceStep >= 5 && state.practiceStep <= 7 && teammate && trainee) {
+          state.ball.owner = teammate.id;
+          state.ball.x = teammate.x + 16;
+          state.ball.y = teammate.y;
+          state.ball.vx = state.ball.vy = state.ball.vz = 0;
+          state.ball.z = 0;
+        } else if (state.practiceStep >= 8 && state.practiceStep <= 11) {
+          if (completedStep === 7 && trainee) {
+            state.ball.owner = trainee.id;
+            state.ball.x = trainee.x + trainee.dirX * 18;
+            state.ball.y = trainee.y + trainee.dirY * 11;
+            state.ball.vx = state.ball.vy = state.ball.vz = 0;
+            state.ball.z = 0;
+          }
+        } else if (state.practiceStep >= 12 && state.practiceStep <= 16) {
+          if (completedStep < 12 && trainee) {
+            state.ball.owner = trainee.id;
+            state.ball.x = trainee.x + trainee.dirX * 18;
+            state.ball.y = trainee.y + trainee.dirY * 11;
+            state.ball.vx = state.ball.vy = state.ball.vz = 0;
+            state.ball.z = 0;
+          }
+        } else if (completedStep >= 12 && completedStep <= 15) {
+          state.practiceTimer = 0.75;
+        } else if (trainee && state.practiceStep < practiceExercises.length - 1) {
+          state.ball.owner = trainee.id;
+          state.ball.x = trainee.x + trainee.dirX * 18;
+          state.ball.y = trainee.y + trainee.dirY * 11;
+          state.ball.vx = state.ball.vy = state.ball.vz = 0;
+          state.ball.z = 0;
+        }
+        setPracticePrompt();
+      }
+
+      function showStart() {
+        state.paused = true;
+        state.exited = true;
+        keys.clear();
+        showOverlay("start", "CANCHA BRAVA", "<p>Has salido del partido. Inicia uno nuevo cuando quieras volver a la cancha.</p>", [
+          { label: "Jugar", primary: true, run: restartMatch },
+          { label: "Controles", run: showControls }
+        ]);
+      }
+
+      const tutorialSteps = [
+        ["1 / 5 · MUÉVETE", "<p>Usa las <kbd>flechas</kbd> para correr por la cancha. Tu jugador seleccionado tiene un aro amarillo. Pulsa <kbd>Espacio</kbd> para cambiar al siguiente compañero.</p>"],
+        ["2 / 5 · PASE Y TIRO", "<p>Con el balón, mantén <kbd>Z</kbd> para cargar un pase dirigido a un compañero y suéltala para ejecutarlo; el receptor aparece marcado. Mantén <kbd>X</kbd> para cargar el tiro al arco y suéltala para disparar. Apunta con la dirección de movimiento.</p>"],
+        ["3 / 5 · DEFIENDE", "<p>Acércate al rival con las <kbd>flechas</kbd>. Pulsa <kbd>Z</kbd> para intentar un quite cercano; usa <kbd>X</kbd> para una barrida más larga y comprometedora. Apunta hacia el balón y no te lances desde lejos. Mientras haces un regate, el rival necesita barrerse para intentar quitarte el balón, pero una barrida fallida puede terminar en falta. Al arquero con el balón no se le puede quitar.</p>"],
+        ["4 / 5 · CAMBIA Y PRESIONA", "<p>Pulsa <kbd>Espacio</kbd> para controlar a otro compañero. Mantén <kbd>Shift</kbd> al acercarte para presionar. Si tu arquero atrapa el balón, tus compañeros se abren para recibir y los rivales retroceden; el arquero de la CPU buscará un pase corto para seguir jugando.</p>"],
+        ["¡HAY MÁS JUGADAS!", "<p>¡Listo para jugar! También existen jugadas especiales: <kbd>C</kbd> bicicleta (el balón alterna ligeramente arriba/abajo), <kbd>A</kbd> elástica (desplázate arriba/abajo), <kbd>S</kbd> enganche diagonal arriba/abajo, <kbd>D</kbd> ruleta (el balón gira alrededor del jugador), <kbd>V</kbd> hombro; <kbd>W</kbd> para pase raso diagonal o aéreo, <kbd>R</kbd>/<kbd>T</kbd> para pases de rabona/tacón al toque o tiros al mantener al menos 0,28 s, <kbd>F</kbd> para vaselina y <kbd>E</kbd> para volea o chilena. El balón rebota en las líneas y no hay saques de banda, esquina ni de arco. Pulsa <strong>Controles</strong> en pausa para ver la guía y practicar.</p>"]
+      ];
+
+      function showTutorial(step = 0) {
+        state.paused = true;
+        state.tutorialStep = step;
+        const [title, content] = tutorialSteps[step];
+        const actions = [];
+        if (step > 0) actions.push({ label: "Anterior", run: () => showTutorial(step - 1) });
+        actions.push({
+          label: step === tutorialSteps.length - 1 ? "Empezar a jugar" : "Siguiente",
+          primary: true,
+          run: () => {
+            if (step === tutorialSteps.length - 1) {
+              state.paused = false;
+              hideOverlay();
+            } else showTutorial(step + 1);
+          }
+        });
+        if (step < tutorialSteps.length - 1) actions.push({
+          label: "Saltar tutorial",
+          run: () => {
+            state.paused = false;
+            hideOverlay();
+          }
+        });
+        showOverlay("tutorial", title, content, actions);
+      }
+
+      function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+      function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+      function playerById(id) { return state.players.find(player => player.id === id); }
+      function ownPlayers(side = 0) { return state.players.filter(player => player.side === side); }
+      function opponent(side) { return 1 - side; }
+      function owner() { return state.ball.owner === null ? null : playerById(state.ball.owner); }
+
+      function closestPlayer(x, y, side) {
+        let best = null;
+        let bestDistance = Infinity;
+        for (const player of state.players) {
+          if (side !== undefined && player.side !== side) continue;
+          const distance = Math.hypot(player.x - x, player.y - y);
+          if (distance < bestDistance) { best = player; bestDistance = distance; }
+        }
+        return best;
+      }
+
+      function startSetPiece(x, y, side, kind) {
+        const isGoalKick = kind === "SAQUE DE ARCO";
+        const taker = isGoalKick
+          ? ownPlayers(side).find(player => player.goalkeeper) || closestPlayer(x, y, side)
+          : ownPlayers(side).filter(player => !player.goalkeeper)
+            .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+        if (!taker) throw new Error("No hay un jugador disponible para ejecutar el balón parado.");
+
+        let takerX = x;
+        let takerY = y;
+        if (isGoalKick) {
+          takerX = side === 0 ? field.left + 16 : field.right - 16;
+          takerY = 270;
+        } else if (kind === "CÓRNER") {
+          const attackingRight = side === 0;
+          takerX = attackingRight ? field.right + 14 : field.left - 14;
+          takerY = y < 270 ? field.top - 12 : field.bottom + 12;
+        } else if (kind === "SAQUE DE BANDA") {
+          takerX = clamp(x, field.left + 20, field.right - 20);
+          takerY = y <= 270 ? field.top - 16 : field.bottom + 16;
+        }
+
+        state.phase = "setpiece";
+        state.specialCharge = null;
+        state.setPiece = { x, y, side, kind, takerId: taker.id, takerX, takerY, elapsed: 0 };
+        state.ball.x = x;
+        state.ball.y = y;
+        state.ball.vx = 0;
+        state.ball.vy = 0;
+        state.ball.vz = 0;
+        state.ball.z = 0;
+        state.ball.owner = null;
+        taker.x = takerX;
+        taker.y = takerY;
+        taker.vx = 0;
+        taker.vy = 0;
+        taker.dirX = side === 0 ? 1 : -1;
+        taker.dirY = 0;
+        if (side === 0) state.selected = taker.id;
+        say(kind + (canShootSetPiece(state.setPiece) ? " — Z PASE · X TIRO" : " — PULSA Z PARA SACAR"), 5);
+      }
+
+      function canShootSetPiece(setup) {
+        if (!setup) return false;
+        if (setup.kind === "PENAL") return true;
+        if (setup.kind !== "TIRO LIBRE") return false;
+        return setup.side === 0 ? setup.x >= 480 : setup.x <= 480;
+      }
+
+      function executeSetPiece() {
+        const setup = state.setPiece;
+        if (!setup || state.phase !== "setpiece") return;
+        const taker = playerById(setup.takerId);
+        if (!taker) throw new Error("No se encontró al ejecutor del balón parado.");
+        const receiver = ownPlayers(setup.side).filter(player => player.id !== taker.id)
+          .sort((a, b) => Math.hypot(a.x - setup.x, a.y - setup.y) - Math.hypot(b.x - setup.x, b.y - setup.y))[0];
+        if (receiver) {
+          const travelSeconds = Math.min(0.75, dist({ x: setup.x, y: setup.y }, receiver) / 360);
+          const dx = receiver.x + receiver.vx * travelSeconds * 0.55 - setup.x;
+          const dy = receiver.y + receiver.vy * travelSeconds * 0.55 - setup.y;
+          const length = Math.hypot(dx, dy) || 1;
+          state.ball.x = setup.x;
+          state.ball.y = setup.y;
+          state.ball.owner = null;
+          state.ball.vx = dx / length * (setup.kind === "SAQUE DE ARCO" ? 5.8 : 5.1);
+          state.ball.vy = dy / length * (setup.kind === "SAQUE DE ARCO" ? 5.8 : 5.1);
+          state.ball.z = 0;
+          state.ball.vz = setup.kind === "SAQUE DE ARCO" ? 1.8 : 0.35;
+          state.ball.lastAction = "pass";
+          state.ball.lastTechnique = "PASE DE REANUDACIÓN";
+          state.ball.passTargetId = receiver.id;
+          state.lastTouch = setup.side;
+          taker.trickPose = "PASE_AEREO";
+          taker.trickPoseUntil = performance.now() + 460;
+          state.selected = setup.side === 0 ? receiver.id : state.selected;
+          state.phase = "play";
+          state.setPiece = null;
+          state.specialShotPending = null;
+          say("¡PASE DE REANUDACIÓN!", 1.2);
+          return;
+        }
+        taker.x = setup.x;
+        taker.y = setup.y;
+        taker.dirX = taker.side === 0 ? 1 : -1;
+        taker.dirY = 0;
+        state.ball.owner = taker.id;
+        state.ball.x = setup.x;
+        state.ball.y = setup.y;
+        state.ball.z = 0;
+        state.phase = "play";
+        state.setPiece = null;
+        state.specialShotPending = null;
+        state.lastTouch = setup.side;
+        say("SAQUE — ¡A JUGAR!", 1);
+      }
+
+      function activePlayer() {
+        const selected = playerById(state.selected);
+        if (selected && selected.side === 0) return selected;
+        return ownPlayers()[0];
+      }
+
+      function aimDirection(player) {
+        let dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
+        let dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
+        if (!dx && !dy) { dx = player.dirX; dy = player.dirY; }
+        const length = Math.hypot(dx, dy) || 1;
+        return { x: dx / length, y: dy / length };
+      }
+
+      function nearestTeammate(player, forwardOnly = false, lane = false) {
+        let best = null;
+        let score = Infinity;
+        const forward = player.side === 0 ? 1 : -1;
+        for (const teammate of ownPlayers(player.side)) {
+          if (teammate.id === player.id) continue;
+          const dx = teammate.x - player.x;
+          const dy = teammate.y - player.y;
+          if (forwardOnly && dx * forward < -20) continue;
+          const cost = Math.hypot(dx, dy) + (lane ? Math.abs(dy) * 0.55 : 0) -
+            (forwardOnly ? dx * forward * 0.4 : 0) - (teammate.id === state.selected ? 110 : 0) +
+            (teammate.goalkeeper && ownPlayers(player.side).some(candidate => !candidate.goalkeeper && candidate.id !== player.id) ? 70 : 0);
+          if (cost < score) { score = cost; best = teammate; }
+        }
+        return best;
+      }
+
+      function launchBall(player, dx, dy, speed, lift = 0, label = "", passTargetId = null) {
+        const length = Math.hypot(dx, dy) || 1;
+        const nudge = 17;
+        state.ball.x = player.x + dx / length * nudge;
+        state.ball.y = player.y + dy / length * nudge;
+        state.ball.owner = null;
+        state.ball.vx = dx / length * speed + player.vx / 60 * 0.2;
+        state.ball.vy = dy / length * speed + player.vy / 60 * 0.2;
+        state.ball.z = 1.5;
+        state.ball.vz = Math.max(0, lift);
+        state.ball.lastAction = passTargetId !== null || label.includes("PASE")
+          ? "pass"
+          : ["TIRO", "REMATE", "VOLEA", "CHILENA", "RABONA", "TACONAZO", "VASELINA", "PENAL"].some(action => label.includes(action))
+            ? "shot"
+            : "pass";
+        state.ball.lastTechnique = label;
+        state.ball.passTargetId = state.ball.lastAction === "pass" ? passTargetId : null;
+        player.action = 0.35;
+        state.lastTouch = player.side;
+        state.charge = null;
+        if (label) {
+          state.trickText = label;
+          state.trickTime = 1.2;
+        }
+      }
+
+      function shoot(player, power, style = "", lift = 0, chargedAmount = null) {
+        const direction = aimDirection(player);
+        const charge = chargedAmount === null
+          ? state.charge ? Math.min(1, (performance.now() - state.charge.started) / state.charge.max) : 0
+          : clamp(chargedAmount, 0, 1);
+        const speed = style === "TIRO"
+          ? player.goalkeeper ? 5.8 + charge * 1.6 : 7.2 + charge * 3.5
+          : power * (0.76 + charge * 0.56);
+        const shotLift = style === "TIRO"
+          ? player.goalkeeper ? 1.2 + charge * 0.8 : 1.8 + charge * 1.4
+          : 1.8 + charge * 1.8 + lift;
+        if (style === "TIRO") {
+          player.trickPose = "TIRO";
+          player.trickPoseUntil = performance.now() + 520;
+        }
+        if (style && style !== "TIRO") {
+          player.trickPose = style;
+          player.trickPoseUntil = performance.now() + 620;
+        }
+        launchBall(player, direction.x, direction.y, speed, shotLift, style || "TIRO");
+        if (style && style !== "TIRO") player.action = 0.62;
+        state.charge = null;
+        state.possession = Math.max(0, state.possession - 0.25);
+      }
+
+      function pass(player, type, power = 0.55, style = "", targetOverride = null) {
+        const target = targetOverride ||
+          nearestTeammate(player, type === "through" || type === "cross", type === "cross" || type === "diagonal");
+        if (!target) {
+          say("NO HAY COMPAÑERO DISPONIBLE PARA RECIBIR", 1.2);
+          return false;
+        }
+        player.trickPose = style || (type === "aerial" || type === "lob" ? "PASE_AEREO" : type === "diagonal" ? "PASE_DIAGONAL" : type === "cross" ? "PASE_RASO" : "PASE");
+        player.trickPoseUntil = performance.now() + 460;
+        const aerial = type === "lob" || type === "aerial";
+        const lift = type === "aerial" ? 5.2 + power * 2.2 : type === "lob" ? 4.8 : type === "through" ? 1.8 : type === "cross" ? 1.3 : 0.8;
+        const distance = dist(player, target);
+        const requestedSpeed = (aerial ? 5.8 : type === "through" ? 6.4 : type === "cross" ? 5.9 : type === "diagonal" ? 5.2 : 5.0) + power * 2.5;
+        const speed = Math.min(requestedSpeed, clamp(distance * 0.017 + power * 0.3, 2.7, 7.2));
+        const travelSeconds = Math.min(0.9, distance / Math.max(speed * 60, 1));
+        const prediction = aerial ? 0.45 : type === "through" ? 0.9 : 0.72;
+        let targetX = clamp(target.x + target.vx * travelSeconds * prediction, field.left + 18, field.right - 18);
+        let targetY = clamp(target.y + target.vy * travelSeconds * prediction, field.top + 18, field.bottom - 18);
+        if (type === "through") {
+          targetX = clamp(targetX + (player.side === 0 ? 1 : -1) * 24, field.left + 18, field.right - 18);
+        } else if (type === "cross") {
+          targetX = clamp(targetX + (player.side === 0 ? 1 : -1) * 10, field.left + 18, field.right - 18);
+        } else if (type === "diagonal") {
+          targetY = clamp(targetY + Math.sign(target.y - player.y || player.dirY) * 10, field.top + 18, field.bottom - 18);
+        }
+        const dx = targetX - player.x;
+        const dy = targetY - player.y;
+        const label = style ? style.replace("PASE_", "PASE DE ") : type === "aerial" ? "PASE AÉREO" : type === "lob" ? "PASE FLOTADO" : type === "through" ? "PASE A LA DIAGONAL" : type === "cross" ? "PASE RASO" : type === "diagonal" ? "PASE RASO DIAGONAL" : "PASE";
+        launchBall(player, dx, dy, speed, lift, label, target.id);
+        if (!state.practice) say(label, 0.75);
+        if (state.practice && style) completePracticeMove(style);
+        if (state.practice && type === "diagonal") completePracticeMove("PASE_DIAGONAL");
+        if (state.practice && type === "aerial") completePracticeMove("PASE_AÉREO");
+        return true;
+      }
+
+      function specialShot(player, kind) {
+        if (state.ball.owner !== player.id) return;
+        const goalX = player.side === 0 ? field.right + 8 : field.left - 8;
+        const aim = aimDirection(player);
+        const targetY = clamp(player.y + aim.y * 145, field.goalTop + 12, field.goalBottom - 12);
+        const directionX = goalX - player.x;
+        const directionY = targetY - player.y;
+        const speed = kind === "CHILENA" ? 16.8 : 15.2;
+        const lift = kind === "CHILENA" ? 8.4 : 5.2;
+        player.trickPose = kind;
+        player.trickPoseUntil = performance.now() + (kind === "CHILENA" ? 850 : 650);
+        launchBall(player, directionX, directionY, speed, lift, kind);
+        player.action = kind === "CHILENA" ? 0.85 : 0.65;
+        state.trickText = kind === "CHILENA" ? "¡CHILENA!" : "¡VOLEA!";
+        state.trickTime = 1;
+        say(state.trickText, 1);
+        completePracticeMove(kind);
+      }
+
+      function specialChargeStart(key) {
+        const carrier = owner();
+        if (state.phase !== "play" || state.gameOver || !carrier || carrier.side !== 0) return;
+        state.selected = carrier.id;
+        state.specialCharge = { key, playerId: carrier.id, started: performance.now() };
+      }
+
+      function specialChargeEnd(key) {
+        if (!state.specialCharge || state.specialCharge.key !== key) return;
+        const charge = state.specialCharge;
+        state.specialCharge = null;
+        const player = playerById(charge.playerId);
+        if (!player || state.ball.owner !== player.id || state.phase !== "play") return;
+        const held = performance.now() - charge.started >= 280;
+        const move = key === "r" ? "RABONA" : "TACONAZO";
+        if (held) {
+          const power = key === "r" ? 17.5 : 16.2;
+          shoot(player, power, move, key === "r" ? 2.5 : 1.6);
+          player.trickPose = move;
+          player.trickPoseUntil = performance.now() + 720;
+          player.action = 0.7;
+          state.trickText = "¡TIRO DE " + (key === "r" ? "RABONA" : "TACÓN") + "!";
+          state.trickTime = 1;
+          say(state.trickText, 1);
+          completePracticeMove(key === "r" ? "TIRO_RABONA" : "TIRO_TACO");
+        } else {
+          if (pass(player, "short", 0.58, key === "r" ? "PASE_RABONA" : "PASE_TACO")) {
+            state.trickText = key === "r" ? "PASE DE RABONA" : "PASE DE TACÓN";
+            state.trickTime = 0.9;
+          }
+        }
+      }
+
+      function shoulderCheck(player) {
+        if (state.ball.owner !== player.id) return;
+        const direction = aimDirection(player);
+        const rival = closestPlayer(player.x + direction.x * 26, player.y + direction.y * 26, opponent(player.side));
+        if (rival && dist(player, rival) < 48) {
+          rival.x = clamp(rival.x + direction.x * 18, field.left + 14, field.right - 14);
+          rival.y = clamp(rival.y + direction.y * 12, field.top + 14, field.bottom - 14);
+          rival.action = 0.25;
+        }
+        player.x = clamp(player.x + direction.x * 12, field.left + 18, field.right - 18);
+        player.y = clamp(player.y + direction.y * 12, field.top + 18, field.bottom - 18);
+        player.trickPose = "HOMBRO";
+        player.trickPoseUntil = performance.now() + 520;
+        player.action = 0.5;
+        state.ball.x = player.x + direction.x * 16;
+        state.ball.y = player.y + direction.y * 10;
+        state.ball.vx = direction.x * 24;
+        state.ball.vy = direction.y * 24;
+        state.trickText = "¡GOLPE DE HOMBRO!";
+        state.trickTime = 0.8;
+        say(state.trickText, 0.8);
+        completePracticeMove("HOMBRO");
+      }
+
+      function queueSpecialShot(player) {
+        const now = performance.now();
+        const pending = state.specialShotPending;
+        if (pending && pending.playerId === player.id && now <= pending.expiresAt) {
+          state.specialShotPending = null;
+          specialShot(player, "CHILENA");
+          return;
+        }
+        if (pending) {
+          const previous = playerById(pending.playerId);
+          state.specialShotPending = null;
+          if (previous && state.ball.owner === previous.id) specialShot(previous, "VOLEA");
+        }
+        if (state.ball.owner === player.id) {
+          state.specialShotPending = { playerId: player.id, expiresAt: now + 420 };
+          say("PULSA E OTRA VEZ PARA CHILENA", 0.6);
+        }
+      }
+
+      function trick(player, label, impulse = 0) {
+        if (state.ball.owner !== player.id) return;
+        const direction = aimDirection(player);
+        player.dirX = direction.x;
+        player.dirY = direction.y;
+        player.x = clamp(player.x + direction.x * 10, field.left + 20, field.right - 20);
+        player.y = clamp(player.y + direction.y * 10, field.top + 20, field.bottom - 20);
+        state.ball.x = player.x + direction.x * 15;
+        state.ball.y = player.y + direction.y * 15;
+        player.action = 0.72;
+        player.actionStyle = label;
+        state.ball.vx = direction.x * impulse;
+        state.ball.vy = direction.y * impulse;
+        state.trickText = label;
+        state.trickTime = 0.9;
+        state.possession = Math.min(1, state.possession + 0.08);
+      }
+
+      function takePossession(player) {
+        const receivedControl = player.control;
+        if (state.charge && state.charge.playerId !== player.id) state.charge = null;
+        if (player.control) {
+          state.trickText = "CONTROL: " + player.control;
+          state.trickTime = 0.9;
+          player.trickPose = player.control === "TALÓN" ? "CONTROL_TALON" : "CONTROL_" + player.control;
+          player.trickPoseUntil = performance.now() + 500;
+        }
+        state.ball.owner = player.id;
+        player.aiKick = 0;
+        player.keeperHoldTime = 0;
+        state.ball.vx = 0;
+        state.ball.vy = 0;
+        state.ball.vz = 0;
+        state.ball.z = 0;
+        state.lastTouch = player.side;
+        state.ball.passTargetId = null;
+        player.control = "";
+        player.stamina = Math.min(1, player.stamina + 0.08);
+        const controlMove = { PIE: "CONTROL_PIE", PECHO: "CONTROL_PECHO", "TALÓN": "CONTROL_TALÓN" }[receivedControl];
+        if (state.practice && player.id === 0 && controlMove) completePracticeMove(controlMove);
+      }
+
+      function closestOpponentDistance(player) {
+        const rival = closestPlayer(player.x, player.y, opponent(player.side));
+        return rival ? dist(player, rival) : 999;
+      }
+
+      function isPenaltyArea(x, y, attackingSide) {
+        const inGoalLane = y >= 170 && y <= 370;
+        return inGoalLane && (attackingSide === 0 ? x >= field.right - 82 : x <= field.left + 82);
+      }
+
+      function foul(fouledPlayer = owner()) {
+        if (!fouledPlayer) return;
+        const kind = isPenaltyArea(fouledPlayer.x, fouledPlayer.y, fouledPlayer.side) ? "PENAL" : "TIRO LIBRE";
+        startSetPiece(fouledPlayer.x, fouledPlayer.y, fouledPlayer.side, kind);
+        say(kind + " — Z PASE" + (canShootSetPiece(state.setPiece) ? " · X TIRO" : ""), 4);
+      }
+
+      function moveUser(player, dt) {
+        let dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
+        let dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
+        const length = Math.hypot(dx, dy) || 1;
+        dx /= length;
+        dy /= length;
+        const carrying = state.ball.owner === player.id;
+        const speed = (carrying ? 175 : 205) * (keys.has("Shift") ? 1.1 : 1);
+        player.vx = dx * speed;
+        player.vy = dy * speed;
+        player.x = clamp(player.x + player.vx * dt, field.left + 15, field.right - 15);
+        player.y = clamp(player.y + player.vy * dt, field.top + 15, field.bottom - 15);
+        if (dx || dy) { player.dirX = dx; player.dirY = dy; }
+
+        if (carrying) {
+          const aim = dx || dy ? { x: dx, y: dy } : { x: player.dirX, y: player.dirY };
+          state.ball.x = player.x + aim.x * 18;
+          state.ball.y = player.y + aim.y * 18;
+          state.ball.vx = dx * 36;
+          state.ball.vy = dy * 36;
+        }
+      }
+
+      function carriedBallPosition(player, now) {
+        if (player.trickPose === "RULETA" && player.trickPoseStartedAt) {
+          const duration = player.trickPoseDuration || 700;
+          const progress = clamp((now - player.trickPoseStartedAt) / duration, 0, 1);
+          const angle = -Math.PI / 2 + progress * Math.PI * 2;
+          return {
+            x: clamp(player.x + Math.cos(angle) * 22, field.left + 3, field.right - 3),
+            y: clamp(player.y + Math.sin(angle) * 12, field.top + 3, field.bottom - 3)
+          };
+        }
+        const direction = { x: player.dirX || (player.side === 0 ? 1 : -1), y: player.dirY || 0 };
+        const isBicycle = player.trickPose.startsWith("BICICLETA") && player.trickPoseUntil > now;
+        const phase = state.motionTime * 18;
+        const bicycleOffset = isBicycle
+          ? (player.bicycleCount % 2 === 1 ? -1 : 1) * (5 + Math.sin(phase) * 2)
+          : 0;
+        return {
+          x: clamp(player.x + direction.x * (isBicycle ? 16 + Math.cos(phase) * 3 : 18), field.left + 3, field.right - 3),
+          y: clamp(player.y + direction.y * (isBicycle ? 10 : 11) + bicycleOffset, field.top + 3, field.bottom - 3)
+        };
+      }
+
+      function applyPressure(player, dt) {
+        const rival = owner();
+        if (keys.has("Shift") && rival && !rival.goalkeeper && rival.side !== player.side &&
+          !isProtectedSkillMove(rival) && dist(player, rival) < 40 && state.phase === "play") {
+          state.pressure = Math.min(1, state.pressure + dt * 1.7);
+          if (state.pressure >= 0.65 && Math.random() < dt * 1.25) {
+            takePossession(player);
+            state.pressure = 0;
+            say("¡PRESIÓN Y RECUPERACIÓN!", 1.2);
+          }
+        } else {
+          state.pressure = Math.max(0, state.pressure - dt * 1.4);
+        }
+      }
+
+      function moveCpu(player, dt) {
+        if (state.practice && (player.side === 1 || player.id !== 0)) {
+          player.vx = 0;
+          player.vy = 0;
+          return;
+        }
+        const ball = state.ball;
+        const heldBy = owner();
+        const attackDirection = player.side === 0 ? 1 : -1;
+        let targetX = player.homeX;
+        let targetY = player.homeY;
+        const roster = ownPlayers(player.side);
+        const fieldPlayers = roster.filter(teammate => !teammate.goalkeeper);
+        const closestFieldPlayer = fieldPlayers.reduce((best, teammate) =>
+          !best || dist(teammate, ball) < dist(best, ball) ? teammate : best, null);
+        if (heldBy && heldBy.goalkeeper) {
+          if (player.id === heldBy.id) {
+            targetX = player.x;
+            targetY = player.y;
+          } else if (player.side === heldBy.side) {
+            const laneOffset = ((player.index % 3) - 1) * 52;
+            targetX = clamp(player.homeX + attackDirection * 34, field.left + 30, field.right - 30);
+            targetY = clamp(player.homeY + laneOffset, field.top + 26, field.bottom - 26);
+          } else {
+            const retreatDirection = heldBy.side === 0 ? 1 : -1;
+            targetX = clamp(Math.max(player.homeX, heldBy.x + retreatDirection * 96), field.left + 32, field.right - 32);
+            targetY = clamp(player.homeY + (player.y - heldBy.y) * 0.22, field.top + 26, field.bottom - 26);
+          }
+        } else if (player.goalkeeper) {
+          const ownGoalX = player.side === 0 ? field.left + 22 : field.right - 22;
+          const ballThreatening = Math.abs(ball.x - ownGoalX) < 175;
+          targetX = ownGoalX;
+          targetY = ballThreatening ? clamp(ball.y + ball.vy * 2, field.goalTop + 18, field.goalBottom - 18) : 270;
+          if (ballThreatening && Math.abs(ball.x - ownGoalX) < 92) {
+            targetX += attackDirection * 24;
+          }
+        } else if (state.phase === "setpiece") {
+          if (state.setPiece && state.setPiece.side === player.side && player === closestFieldPlayer) {
+            targetX = state.setPiece.x - attackDirection * 18;
+            targetY = state.setPiece.y;
+          } else {
+            targetX = player.homeX;
+            targetY = player.homeY;
+          }
+        } else if (heldBy && heldBy.side === player.side) {
+          if (player.id === heldBy.id) {
+            targetX = clamp(player.x + attackDirection * 38, field.left + 20, field.right - 20);
+            targetY = clamp(player.y + (270 - player.y) * 0.18, field.top + 22, field.bottom - 22);
+          } else {
+            const laneOffset = ((player.index % 3) - 1) * 58;
+            targetX = clamp(player.homeX + (ball.x - 480) * 0.3, field.left + 30, field.right - 30);
+            targetY = clamp(player.homeY + laneOffset + (ball.y - 270) * 0.13, field.top + 22, field.bottom - 22);
+            if (player.side === 1) targetX = clamp(targetX, field.left + 32, field.right - 120);
+            else targetX = clamp(targetX, field.left + 120, field.right - 32);
+          }
+        } else {
+          const ballIsLoose = !heldBy;
+          if (player === closestFieldPlayer) {
+            const closingOffset = clamp(dist(player, ball) * 0.22, 5, 26);
+            const pressOffset = ballIsLoose ? 0 : -attackDirection * closingOffset;
+            targetX = clamp(ball.x + pressOffset, field.left + 18, field.right - 18);
+            targetY = ballIsLoose ? clamp(ball.y + ball.vy * 1.5, field.top + 18, field.bottom - 18) : clamp(ball.y, field.top + 18, field.bottom - 18);
+          } else {
+            const shiftX = clamp((ball.x - 480) * 0.17, -65, 65);
+            const shiftY = clamp((ball.y - 270) * 0.2, -48, 48);
+            targetX = clamp(player.homeX + shiftX, field.left + 28, field.right - 28);
+            targetY = clamp(player.homeY + shiftY, field.top + 22, field.bottom - 22);
+            if (heldBy) {
+              const mark = closestPlayer(heldBy.x + attackDirection * 28, heldBy.y, player.side);
+              if (mark && mark.id === player.id && player !== closestFieldPlayer) {
+                targetX = clamp(heldBy.x + attackDirection * 34, field.left + 24, field.right - 24);
+                targetY = clamp(heldBy.y + (player.homeY - 270) * 0.22, field.top + 20, field.bottom - 20);
+              }
+            }
+          }
+        }
+
+        const dx = targetX - player.x;
+        const dy = targetY - player.y;
+        const length = Math.hypot(dx, dy);
+        const speed = player.side === 1
+          ? player.id === state.ball.owner ? 124 : player.goalkeeper ? 112 : 145
+          : player.id === state.ball.owner ? 160 : player.goalkeeper ? 128 : 174;
+        if (length > (player.goalkeeper ? 4 : 7)) {
+          const moveSpeed = Math.min(speed, length * 3);
+          player.vx = dx / length * moveSpeed;
+          player.vy = dy / length * moveSpeed;
+          player.x = clamp(player.x + player.vx * dt, field.left + 14, field.right - 14);
+          player.y = clamp(player.y + player.vy * dt, field.top + 14, field.bottom - 14);
+          player.dirX = dx / length;
+          player.dirY = dy / length;
+        } else {
+          player.vx = 0;
+          player.vy = 0;
+        }
+        if (player.id === state.ball.owner) {
+          state.ball.x = player.x + player.dirX * 17;
+          state.ball.y = player.y + player.dirY * 11;
+          state.ball.vx = player.vx * 0.12;
+          state.ball.vy = player.vy * 0.12;
+        }
+      }
+
+      function cpuDecision(dt) {
+        const player = owner();
+        if (!player || state.phase !== "play" || state.practice ||
+          (player.side === 0 && player.id === state.selected)) return;
+        player.aiKick = (player.aiKick || 0) + dt;
+        const attackDirection = player.side === 0 ? 1 : -1;
+        const goalX = player.side === 0 ? field.right - 8 : field.left + 8;
+        const distanceToGoal = Math.abs(player.x - goalX);
+        const goalLane = Math.abs(player.y - 270) < 145;
+        const pressureDistance = closestOpponentDistance(player);
+        if (!player.goalkeeper && distanceToGoal < 205 && goalLane && player.aiKick > 0.85 &&
+          (pressureDistance > 65 || distanceToGoal < 135)) {
+          const targetY = clamp(270 + (player.y - 270) * 0.18, field.goalTop + 12, field.goalBottom - 12);
+          launchBall(player, goalX - player.x, targetY - player.y, 6.8 + Math.random() * 1.1, 1.2, "REMATE CPU");
+          player.trickPose = "TIRO";
+          player.trickPoseUntil = performance.now() + 420;
+          player.aiKick = 0;
+          return;
+        }
+        const teammate = nearestTeammate(player);
+        const teammateAhead = teammate && (teammate.x - player.x) * attackDirection > 16;
+        const userReceiver = player.side === 0 && state.selected !== player.id ? playerById(state.selected) : null;
+        const marker = userReceiver ? closestPlayer(userReceiver.x, userReceiver.y, opponent(player.side)) : null;
+        const userReceiverOpen = userReceiver && marker && dist(player, userReceiver) < 300 && dist(userReceiver, marker) > 30;
+        const shouldPassUnderPressure = pressureDistance < 54 && player.aiKick > 0.75;
+        const shouldPassToUser = userReceiverOpen && player.aiKick > 1.25 && Math.random() < dt * 1.1;
+        const shouldPassToSupport = teammateAhead && player.aiKick > 1.65 && Math.random() < dt * 0.9;
+        if (teammate && (shouldPassUnderPressure || shouldPassToUser || shouldPassToSupport)) {
+          pass(player, "short", 0.72);
+          player.aiKick = 0;
+        }
+      }
+
+      function cpuDefense(dt) {
+        const carrier = owner();
+        if (!carrier || state.phase !== "play" || state.practice) return;
+        if (carrier.goalkeeper) return;
+        if (state.charge && state.charge.playerId === carrier.id && carrier.side === 0) return;
+        const protectedSkill = isProtectedSkillMove(carrier);
+        const defenders = ownPlayers(opponent(carrier.side)).filter(player => player.id !== state.selected);
+        const defender = defenders.reduce((closest, player) =>
+          !closest || dist(player, carrier) < dist(closest, carrier) ? player : closest, null);
+        if (!defender) return;
+        const distance = dist(defender, carrier);
+        if (protectedSkill) {
+          if (distance <= 58 && defender.tackleCooldown <= 0) executeTackle(defender, true);
+          return;
+        }
+        if (distance <= 30 && defender.tackleCooldown <= 0) {
+          executeTackle(defender, false);
+        }
+      }
+
+      function isProtectedSkillMove(player) {
+        if (!player || player.trickPoseUntil <= performance.now()) return false;
+        return player.trickPose.startsWith("BICICLETA") ||
+          ["ELASTICA", "ELASTICA_ARMED", "ENGANCHE", "RULETA", "HOMBRO", "RABONA", "TACONAZO",
+            "VOLEA", "CHILENA", "VASELINA"].includes(player.trickPose);
+      }
+
+      function resetPracticeBall() {
+        const trainee = playerById(0);
+        if (!trainee) throw new Error("No se encontró al jugador de práctica para reiniciar el balón.");
+        state.ball.owner = trainee.id;
+        state.ball.x = trainee.x + trainee.dirX * 18;
+        state.ball.y = trainee.y + trainee.dirY * 11;
+        state.ball.vx = 0;
+        state.ball.vy = 0;
+        state.ball.vz = 0;
+        state.ball.z = 0;
+      }
+
+      function resolveBall(dt) {
+        const ball = state.ball;
+        if (ball.owner !== null) return;
+        const passReceiver = ball.lastAction === "pass" && ball.passTargetId !== null
+          ? playerById(ball.passTargetId)
+          : null;
+        if (passReceiver && passReceiver.side === state.lastTouch) {
+          const receiverDistance = dist(ball, passReceiver);
+          if (receiverDistance <= 42 && ball.z <= 54) {
+            takePossession(passReceiver);
+            return;
+          }
+          const aimX = passReceiver.x + passReceiver.vx * 0.08 - ball.x;
+          const aimY = passReceiver.y + passReceiver.vy * 0.08 - ball.y;
+          const aimLength = Math.hypot(aimX, aimY) || 1;
+          const speed = Math.min(Math.hypot(ball.vx, ball.vy), clamp(receiverDistance * 0.017, 2.1, 7.0));
+          ball.vx = aimX / aimLength * speed;
+          ball.vy = aimY / aimLength * speed;
+        }
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        ball.vx *= Math.pow(0.982, dt * 60);
+        ball.vy *= Math.pow(0.982, dt * 60);
+        ball.z += ball.vz * dt * 60;
+        ball.vz -= 0.22 * dt * 60;
+        if (ball.z < 0) { ball.z = 0; ball.vz = Math.abs(ball.vz) * 0.42; if (ball.vz < 0.5) ball.vz = 0; }
+        if (Math.abs(ball.vx) + Math.abs(ball.vy) < 0.07) { ball.vx = 0; ball.vy = 0; }
+
+        collideWithGoalPosts();
+        if (ball.x < field.left || ball.x > field.right) {
+          const crossedRight = ball.x > field.right;
+          if (ball.y > field.goalTop + 5 && ball.y < field.goalBottom - 5 && ball.z < 28) {
+            if (state.practice) {
+              resetPracticeBall();
+              return;
+            }
+            const scorer = crossedRight ? 0 : 1;
+            state.score[scorer]++;
+            say(scorer === 0 ? "¡GOOOL DEL EQUIPO TURQUESA!" : "¡GOL DE LA CPU!", 2.5);
+            state.trickText = "¡GOOOL!";
+            state.trickTime = 2;
+            resetKickoff(opponent(scorer), 1.4);
+            return;
+          }
+          ball.x = crossedRight ? field.right : field.left;
+          ball.vx = -ball.vx * 0.76;
+        }
+        if (ball.y < field.top || ball.y > field.bottom) {
+          const crossedBottom = ball.y > field.bottom;
+          ball.y = crossedBottom ? field.bottom : field.top;
+          ball.vy = -ball.vy * 0.76;
+        }
+
+        resolveBallPlayerCollisions();
+      }
+
+      function collideWithGoalPosts() {
+        const ball = state.ball;
+        const postRadius = 8;
+        for (const post of [
+          { x: field.left, y: field.goalTop }, { x: field.left, y: field.goalBottom },
+          { x: field.right, y: field.goalTop }, { x: field.right, y: field.goalBottom }
+        ]) {
+          const dx = ball.x - post.x;
+          const dy = ball.y - post.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance >= postRadius || distance === 0) continue;
+          const nx = dx / distance;
+          const ny = dy / distance;
+          ball.x = post.x + nx * postRadius;
+          ball.y = post.y + ny * postRadius;
+          const dot = ball.vx * nx + ball.vy * ny;
+          if (dot < 0) {
+            ball.vx -= 1.75 * dot * nx;
+            ball.vy -= 1.75 * dot * ny;
+          }
+          ball.vz *= 0.78;
+        }
+      }
+
+      function resolvePlayerCollisions() {
+        for (let i = 0; i < state.players.length; i++) {
+          for (let j = i + 1; j < state.players.length; j++) {
+            const first = state.players[i];
+            const second = state.players[j];
+            let dx = second.x - first.x;
+            let dy = second.y - first.y;
+            let distance = Math.hypot(dx, dy);
+            const carrier = owner();
+            const keeperSpace = carrier && carrier.goalkeeper &&
+              ((first.id === carrier.id && second.side !== carrier.side) ||
+               (second.id === carrier.id && first.side !== carrier.side));
+            const collisionRadius = keeperSpace ? 58 : 19;
+            if (distance >= collisionRadius) continue;
+            if (distance === 0) { dx = first.id < second.id ? 1 : -1; dy = 0; distance = 1; }
+            const nx = dx / distance;
+            const ny = dy / distance;
+            const overlap = keeperSpace ? (collisionRadius - distance) * 0.18 : (collisionRadius - distance) * 0.38;
+            const firstOwnsBall = first.id === state.ball.owner;
+            const secondOwnsBall = second.id === state.ball.owner;
+            const firstPush = secondOwnsBall ? overlap * (keeperSpace ? 0 : 2) : firstOwnsBall ? 0 : overlap;
+            const secondPush = firstOwnsBall ? overlap * (keeperSpace ? 0 : 2) : secondOwnsBall ? 0 : overlap;
+            first.x -= nx * firstPush;
+            first.y -= ny * firstPush;
+            second.x += nx * secondPush;
+            second.y += ny * secondPush;
+            first.x = clamp(first.x, field.left + 14, field.right - 14);
+            second.x = clamp(second.x, field.left + 14, field.right - 14);
+            first.y = clamp(first.y, field.top + 14, field.bottom - 14);
+            second.y = clamp(second.y, field.top + 14, field.bottom - 14);
+          }
+        }
+      }
+
+      function resolveBallPlayerCollisions() {
+        const ball = state.ball;
+        let nearest = null;
+        let nearestDistance = Infinity;
+        for (const player of state.players) {
+          const distance = dist(player, ball);
+          if (distance < nearestDistance) { nearest = player; nearestDistance = distance; }
+        }
+        if (!nearest) return;
+        const radius = nearest.goalkeeper ? 19 : 14;
+        const controlHeight = { PIE: 16, MUSLO: 26, PECHO: 36, "TALÓN": 18 };
+        const maxHeight = nearest.goalkeeper ? 32 : (controlHeight[nearest.control] || 18);
+        if (ball.lastAction === "pass" && nearest.side === state.lastTouch &&
+          nearestDistance <= radius + (ball.passTargetId === nearest.id ? 20 : 8) && ball.z <= 42) {
+          takePossession(nearest);
+          return;
+        }
+        if (nearestDistance > radius || ball.z > maxHeight) return;
+        const speed = Math.hypot(ball.vx, ball.vy);
+        if (nearest.goalkeeper && speed < 10) {
+          takePossession(nearest);
+        } else         if (speed < 5.5) {
+          takePossession(nearest);
+        } else {
+          let nx = (ball.x - nearest.x) / (nearestDistance || 1);
+          let ny = (ball.y - nearest.y) / (nearestDistance || 1);
+          if (!nx && !ny) { nx = nearest.dirX; ny = nearest.dirY; }
+          const dot = ball.vx * nx + ball.vy * ny;
+          if (dot < 0) {
+            const rebound = nearest.goalkeeper ? 1.6 : 1.2;
+            ball.vx -= rebound * dot * nx;
+            ball.vy -= rebound * dot * ny;
+          }
+          ball.x = nearest.x + nx * radius;
+          ball.y = nearest.y + ny * radius;
+          ball.vx *= nearest.goalkeeper ? 0.55 : 0.72;
+          ball.vy *= nearest.goalkeeper ? 0.55 : 0.72;
+          if (nearest.goalkeeper && speed < 15) takePossession(nearest);
+        }
+      }
+
+      function executeTackle(player, slide) {
+        if (player.tackleCooldown > 0 || state.phase !== "play") return;
+        const range = slide ? 62 : 35;
+        const carrier = owner();
+        let target = carrier && carrier.side !== player.side ? carrier : null;
+        if (!target) {
+          const targetX = player.x + player.dirX * (slide ? 24 : 8);
+          const targetY = player.y + player.dirY * (slide ? 24 : 8);
+          target = state.players.filter(rival => rival.side !== player.side && !rival.goalkeeper)
+            .sort((a, b) => Math.hypot(a.x - targetX, a.y - targetY) - Math.hypot(b.x - targetX, b.y - targetY))[0];
+        }
+        if (!target || target.goalkeeper || dist(player, target) > range) return;
+        if (!slide && isProtectedSkillMove(target)) return;
+        const dx = target.x - player.x;
+        const dy = target.y - player.y;
+        const length = Math.hypot(dx, dy) || 1;
+        player.dirX = dx / length;
+        player.dirY = dy / length;
+        state.tackle = slide ? 0.8 : 0.38;
+        const aiControlled = player.side !== 0 || player.id !== state.selected;
+        player.tackleCooldown = aiControlled ? (slide ? 1.7 : 1.15) : (slide ? 1.05 : 0.7);
+        player.action = slide ? 0.72 : 0.38;
+        player.actionStyle = slide ? "BARRIDA" : "QUITE";
+        player.trickPose = slide ? "BARRIDA" : "QUITE";
+        player.trickPoseUntil = performance.now() + (slide ? 760 : 300);
+        if (slide) {
+          player.x = clamp(player.x + dx / length * 9, field.left + 16, field.right - 16);
+          player.y = clamp(player.y + dy / length * 9, field.top + 16, field.bottom - 16);
+        }
+        const targetHasBall = state.ball.owner === target.id;
+        const chance = slide ? 0.66 : 0.82;
+        const adjustedChance = aiControlled ? (slide ? 0.3 : 0.4) : chance;
+        if (targetHasBall && Math.random() < adjustedChance) {
+          takePossession(player);
+          if (player.side === 0) say(slide ? "¡BARRIDA LIMPIA!" : "¡QUITE PERFECTO!", 1.2);
+          else say("¡EL RIVAL RECUPERA EL BALÓN!", 1.2);
+        } else if (targetHasBall && Math.random() < (slide ? 0.2 : 0.05)) {
+          foul(target);
+        }
+      }
+
+      function update(dt) {
+        if (state.paused || state.exited) {
+          pressed.length = 0;
+          return;
+        }
+        if (state.phase === "restartPause") {
+          state.restartTimer = Math.max(0, state.restartTimer - dt);
+          if (state.restartTimer === 0) state.phase = "play";
+        }
+        if (!state.practice && state.phase === "play" && !state.gameOver) {
+          state.time = Math.max(0, state.time - dt);
+          if (state.time === 0) { state.gameOver = true; say("FIN DEL PARTIDO — NUEVO PARTIDO", 999); }
+        }
+        state.messageTime = Math.max(0, state.messageTime - dt);
+        state.trickTime = Math.max(0, state.trickTime - dt);
+        state.tackle = Math.max(0, state.tackle - dt);
+        state.swap = Math.max(0, state.swap - dt);
+        state.motionTime += dt;
+        const now = performance.now();
+        if (state.specialShotPending && now >= state.specialShotPending.expiresAt) {
+          const pendingPlayer = playerById(state.specialShotPending.playerId);
+          state.specialShotPending = null;
+          if (pendingPlayer && state.ball.owner === pendingPlayer.id && state.phase === "play") {
+            specialShot(pendingPlayer, "VOLEA");
+          }
+        }
+        if (state.phase === "setpiece" && state.setPiece) {
+          state.setPiece.elapsed += dt;
+          if (state.setPiece.side === 1 && state.setPiece.elapsed >= 0.8) executeSetPiece();
+        }
+        if (state.practice && ((state.practiceStep >= 5 && state.practiceStep <= 7) || (state.practiceStep >= 8 && state.practiceStep <= 11))) {
+          state.practiceTimer -= dt;
+          if (state.practiceTimer <= 0) {
+            const teammate = playerById(1);
+            const trainee = playerById(0);
+            const receivingStage = state.practiceStep >= 5 && state.practiceStep <= 7;
+            if (teammate && trainee && state.ball.owner === teammate.id) {
+              launchBall(teammate, trainee.x - teammate.x, trainee.y - teammate.y, 6.4, 0, "PASE DE PRÁCTICA", trainee.id);
+              state.practiceTimer = receivingStage ? 1.1 : 0.75;
+            } else if (teammate && trainee && state.ball.owner === null && receivingStage) {
+              state.ball.owner = teammate.id;
+              state.ball.x = teammate.x + teammate.dirX * 16;
+              state.ball.y = teammate.y + teammate.dirY * 10;
+              state.ball.vx = state.ball.vy = state.ball.vz = 0;
+              state.ball.z = 0;
+              state.practiceTimer = 0.45;
+            } else if (teammate && trainee && state.ball.owner === null && !receivingStage) {
+              state.ball.owner = trainee.id;
+              state.ball.x = trainee.x + trainee.dirX * 18;
+              state.ball.y = trainee.y + trainee.dirY * 11;
+              state.ball.vx = state.ball.vy = state.ball.vz = 0;
+              state.ball.z = 0;
+              state.practiceTimer = 0.6;
+            }
+          }
+        }
+        if (state.practice && state.practiceStep >= 12 && state.practiceStep <= 16) {
+          state.practiceTimer -= dt;
+          if (state.practiceTimer <= 0 && state.ball.owner !== 0) {
+            const trainee = playerById(0);
+            if (trainee) {
+              state.ball.owner = trainee.id;
+              state.ball.x = trainee.x + trainee.dirX * 18;
+              state.ball.y = trainee.y + trainee.dirY * 11;
+              state.ball.vx = state.ball.vy = state.ball.vz = 0;
+              state.ball.z = 0;
+            }
+            state.practiceTimer = 0.6;
+          }
+        }
+        for (const player of state.players) {
+          player.action = Math.max(0, player.action - dt);
+          player.tackleCooldown = Math.max(0, (player.tackleCooldown || 0) - dt);
+          if (player.trickPoseUntil && now >= player.trickPoseUntil) player.trickPose = "";
+          if (player.elasticaPendingUntil && now > player.elasticaPendingUntil) {
+            player.elasticaPendingUntil = 0;
+            if (state.ball.owner === player.id) {
+              state.ball.owner = null;
+              state.ball.x = player.x + player.dirX * 12;
+              state.ball.y = player.y + player.dirY * 8;
+              state.ball.vx = player.dirX * 4.2;
+              state.ball.vy = player.dirY * 4.2;
+              player.trickPose = "ELASTICA_FALLO";
+              player.trickPoseUntil = now + 450;
+              say("¡ELÁSTICA FALLIDA! PERDISTE EL BALÓN", 1.7);
+            }
+          }
+          if (state.phase === "setpiece") {
+            player.vx = 0;
+            player.vy = 0;
+          } else if (state.phase === "restartPause") {
+            player.vx = 0;
+            player.vy = 0;
+          } else if (player.side === 0 && player.id === state.selected) moveUser(player, dt);
+          else moveCpu(player, dt);
+          player.stamina = clamp(player.stamina + dt * 0.018, 0.35, 1);
+        }
+        cpuDefense(dt);
+        if (state.phase === "play") resolvePlayerCollisions();
+        const carrier = owner();
+        if (carrier) {
+          const position = carriedBallPosition(carrier, now);
+          state.ball.x = position.x;
+          state.ball.y = position.y;
+          state.ball.vx = carrier.vx * 0.12;
+          state.ball.vy = carrier.vy * 0.12;
+          if (carrier.goalkeeper && state.phase === "play" && !state.practice) {
+            carrier.keeperHoldTime = (carrier.keeperHoldTime || 0) + dt;
+            if (carrier.keeperHoldTime >= 2) {
+              const teammate = ownPlayers(carrier.side)
+                .filter(player => player.id !== carrier.id)
+                .sort((a, b) => dist(carrier, a) - dist(carrier, b))[0];
+              if (teammate && pass(carrier, "short", 0.62, "PASE_ARQUERO", teammate)) {
+                carrier.keeperHoldTime = 0;
+              }
+            }
+          }
+        }
+        applyPressure(activePlayer(), dt);
+        if (state.phase === "play") {
+          cpuDecision(dt);
+          resolveBall(dt);
+        }
+        for (const key of pressed) handleKey(key);
+        pressed.length = 0;
+      }
+
+      function handleKey(key) {
+        const player = activePlayer();
+        if (state.practice && key === "Escape") {
+          finishPractice();
+          return;
+        }
+        if (key === "Enter") {
+          if (state.gameOver) restartMatch();
+          return;
+        }
+        if (key === "Tab") { switchPlayer(); return; }
+        if (key === "g") { executeTackle(player, false); return; }
+        if (key === "h") { executeTackle(player, true); return; }
+        if (state.phase !== "play" || state.gameOver) return;
+        if (state.practice && state.practiceStep >= 5 && state.practiceStep <= 7 && ["q", "e", "r"].includes(key)) {
+          const controls = { q: "PIE", e: "PECHO", r: "TALÓN" };
+          player.control = controls[key];
+          player.trickPose = "CONTROL_READY_" + (key === "r" ? "TALON" : controls[key]);
+          player.trickPoseUntil = 0;
+          say("CONTROL PREPARADO: " + controls[key], 0.8);
+          state.trickText = "CONTROL PREPARADO: " + controls[key];
+          state.trickTime = 0.8;
+          const practiceControl = { PIE: "CONTROL_PIE", PECHO: "CONTROL_PECHO", "TALÓN": "CONTROL_TALÓN" }[player.control];
+          if (state.ball.owner === player.id) {
+            player.trickPose = player.control === "TALÓN" ? "CONTROL_TALON" : "CONTROL_" + player.control;
+            player.trickPoseUntil = performance.now() + 500;
+            completePracticeMove(practiceControl);
+          }
+          return;
+        }
+        if (key === "e" && state.ball.owner === player.id) {
+          queueSpecialShot(player);
+          return;
+        }
+        if (["q", "e", "r"].includes(key)) {
+          const controls = { q: "PIE", e: "PECHO", r: "TALÓN" };
+          player.control = controls[key];
+          player.trickPose = "CONTROL_READY_" + (key === "r" ? "TALON" : controls[key]);
+          player.trickPoseUntil = 0;
+          say("CONTROL PREPARADO: " + controls[key], 0.8);
+          state.trickText = "CONTROL PREPARADO: " + controls[key];
+          state.trickTime = 0.8;
+          return;
+        }
+        if (state.ball.owner !== player.id) return;
+        if (["c", "a", "s", "d"].includes(key)) {
+          executeSpecialTrick(player, key);
+          return;
+        }
+        if (key === "v") { shoulderCheck(player); return; }
+        if (key === "f") {
+          shoot(player, 15.5, "VASELINA", 7.5);
+          player.trickPose = "VASELINA";
+          player.trickPoseUntil = performance.now() + 700;
+          player.action = 0.7;
+          state.trickText = "¡VASELINA!";
+          state.trickTime = 1;
+          say(state.trickText, 1);
+          completePracticeMove("VASELINA");
+          return;
+        }
+        if (key === "y") pass(player, "short");
+        else if (key === "p") pass(player, "lob");
+        else if (key === "o") pass(player, "cross");
+        else if (key === "i") pass(player, "through");
+      }
+
+      function executeSpecialTrick(player, key) {
+        if (state.ball.owner !== player.id || state.phase !== "play") return;
+        const now = performance.now();
+        if (key === "c") {
+          player.bicycleCount++;
+          const leg = player.bicycleCount % 2 === 1 ? "IZQUIERDA" : "DERECHA";
+          player.trickPose = "BICICLETA_" + leg;
+          player.trickPoseUntil = now + 460;
+          player.action = 0.46;
+          state.trickText = "BICICLETA " + leg;
+          state.trickTime = 0.65;
+          state.ball.x = player.x + player.dirX * 11;
+          state.ball.y = player.y + player.dirY * 7;
+          completePracticeMove("BICICLETA");
+        } else if (key === "a") {
+          if (player.elasticaPendingUntil && now <= player.elasticaPendingUntil) {
+            player.elasticaPendingUntil = 0;
+            player.trickPose = "ELASTICA";
+            player.trickPoseUntil = now + 620;
+            player.action = 0.62;
+            const vertical = keys.has("ArrowUp") ? -1 : keys.has("ArrowDown") ? 1 : (player.elasticaSide === -1 ? 1 : -1);
+            player.elasticaSide = vertical;
+            player.y = clamp(player.y + vertical * 16, field.top + 18, field.bottom - 18);
+            player.dirY = vertical * 0.25;
+            state.trickText = "¡ELÁSTICA!";
+            state.trickTime = 0.85;
+            completePracticeMove("ELÁSTICA");
+          } else {
+            player.elasticaPendingUntil = now + 2000;
+            player.trickPose = "ELASTICA_ARMED";
+            player.trickPoseUntil = now + 2000;
+            state.trickText = "ELÁSTICA: PULSA A OTRA VEZ";
+            state.trickTime = 1.2;
+          }
+        } else if (key === "s") {
+          const vertical = keys.has("ArrowUp") ? -1 : keys.has("ArrowDown") ? 1 : (player.diagonalSide === -1 ? 1 : -1);
+          player.diagonalSide = vertical;
+          const dx = player.side === 0 ? 0.82 : -0.82;
+          const dy = vertical * 0.57;
+          player.dirX = dx;
+          player.dirY = dy;
+          player.x = clamp(player.x + dx * 12, field.left + 18, field.right - 18);
+          player.y = clamp(player.y + dy * 12, field.top + 18, field.bottom - 18);
+          player.trickPose = "ENGANCHE";
+          player.trickPoseUntil = now + 380;
+          player.action = 0.38;
+          state.ball.x = player.x + dx * 12;
+          state.ball.y = player.y + dy * 8;
+          state.trickText = "ENGANCHE DIAGONAL";
+          state.trickTime = 0.65;
+          completePracticeMove("ENGANCHE");
+        } else if (key === "d") {
+          if (now < player.rouletteReadyAt) {
+            say("RULETA DISPONIBLE EN " + Math.ceil((player.rouletteReadyAt - now) / 1000) + " S", 0.9);
+            return;
+          }
+          player.rouletteReadyAt = now + 10000;
+          player.trickPose = "RULETA";
+          player.trickPoseUntil = now + 700;
+          player.trickPoseStartedAt = now;
+          player.trickPoseDuration = 700;
+          player.action = 0.7;
+          const ballPosition = carriedBallPosition(player, now);
+          state.ball.x = ballPosition.x;
+          state.ball.y = ballPosition.y;
+          state.trickText = "¡RULETA!";
+          state.trickTime = 0.9;
+          completePracticeMove("RULETA");
+        }
+      }
+
+      function startCharge(key) {
+        if (state.gameOver) return;
+        if (state.charge) return;
+        if (state.phase === "setpiece" && state.setPiece && state.setPiece.side === 0) {
+          if (state.setPiece.elapsed < 0.5) {
+            say("FALTA — PREPARANDO LA REANUDACIÓN", 0.6);
+            return;
+          }
+          if (key === "z") {
+            executeSetPiece();
+          } else if (key === "x" && canShootSetPiece(state.setPiece)) {
+            state.charge = {
+              key, mode: "setPieceShot", playerId: state.setPiece.takerId,
+              started: performance.now(), max: 1000
+            };
+          }
+          return;
+        }
+        if (state.phase !== "play") return;
+        const carrier = owner();
+        if (carrier && carrier.side === 0) {
+          if (state.practice && carrier.id !== 0) return;
+          state.selected = carrier.id;
+          const mode = key === "x" ? "shot" : key === "w" ? "diagonalPass" : "pass";
+          state.charge = { key, mode, playerId: carrier.id, started: performance.now(), max: key === "w" ? 700 : 1000 };
+          return;
+        }
+        if (key !== "w") executeTackle(activePlayer(), key === "x");
+      }
+
+      function endCharge(key) {
+        if (!state.charge || state.charge.key !== key) return;
+        const charge = state.charge;
+        const player = playerById(charge.playerId);
+        state.charge = null;
+        if (charge.mode === "setPieceShot") {
+          const setup = state.setPiece;
+          if (!player || !setup || setup.takerId !== player.id || state.phase !== "setpiece") {
+            say("EL TIRO LIBRE YA NO ESTÁ DISPONIBLE", 1);
+            return;
+          }
+          const hold = Math.min(1, (performance.now() - charge.started) / charge.max);
+          const goalX = setup.side === 0 ? field.right + 8 : field.left - 8;
+          const aim = aimDirection(player);
+          const targetY = clamp(setup.y + aim.y * 120, field.goalTop + 10, field.goalBottom - 10);
+          const directionX = goalX - setup.x;
+          const directionY = targetY - setup.y;
+          const power = 7.2 + hold * 3.5;
+          const label = setup.kind === "PENAL" ? "PENAL" : "TIRO LIBRE";
+          player.x = setup.x;
+          player.y = setup.y;
+          player.dirX = setup.side === 0 ? 1 : -1;
+          player.trickPose = "TIRO";
+          player.trickPoseUntil = performance.now() + 520;
+          state.phase = "play";
+          state.setPiece = null;
+          launchBall(player, directionX, directionY, power, 2.4 + hold * 2.1, label);
+          say("¡" + label + "!", 1.2);
+          return;
+        }
+        if (!player || state.ball.owner !== player.id) {
+          say("PERDISTE EL BALÓN ANTES DE SOLTAR", 0.9);
+          return;
+        }
+        const heldFor = Math.min(1, (performance.now() - charge.started) / charge.max);
+        if (charge.mode === "shot") shoot(player, 9.2, "TIRO", 0.35, heldFor);
+        else if (charge.mode === "diagonalPass") {
+          const aerial = performance.now() - charge.started >= 320;
+          pass(player, aerial ? "aerial" : "diagonal", heldFor);
+        }
+        else {
+          pass(player, "short", heldFor);
+        }
+      }
+
+      function switchPlayer() {
+        const teammates = ownPlayers();
+        const index = teammates.findIndex(teammate => teammate.id === state.selected);
+        state.selected = teammates[(index + 1) % teammates.length].id;
+        state.swap = 0.2;
+        state.charge = null;
+        say("JUGADOR " + (playerById(state.selected).index + 1), 0.7);
+      }
+
+      function roundedRect(x, y, w, h, r, fill, stroke) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+      }
+
+      function drawField() {
+        ctx.fillStyle = "#172628";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#263837";
+        for (let x = 0; x < W; x += 32) ctx.fillRect(x, 0, 16, H);
+        ctx.fillStyle = "#527d48";
+        ctx.fillRect(field.left, field.top, field.right - field.left, field.bottom - field.top);
+        const stripeH = (field.bottom - field.top) / 8;
+        for (let i = 0; i < 8; i += 2) {
+          ctx.fillStyle = "#59844c";
+          ctx.fillRect(field.left, field.top + i * stripeH, field.right - field.left, stripeH);
+        }
+        ctx.strokeStyle = "#d5e5b2";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(field.left, field.top, field.right - field.left, field.bottom - field.top);
+        ctx.beginPath();
+        ctx.moveTo(480, field.top); ctx.lineTo(480, field.bottom);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(480, 270, 67, 42, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#e8efcf"; ctx.fillRect(477, 267, 6, 6);
+        for (const goal of [{ x: field.left - 24 }, { x: field.right }]) {
+          ctx.fillStyle = "#b6c8af";
+          ctx.fillRect(goal.x, field.goalTop, 24, field.goalBottom - field.goalTop);
+          ctx.strokeStyle = "#e8e5c8";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(goal.x, field.goalTop, 24, field.goalBottom - field.goalTop);
+          ctx.strokeStyle = "#b4c2a2";
+          ctx.lineWidth = 1;
+          for (let y = field.goalTop + 12; y < field.goalBottom; y += 12) {
+            ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + 24, y); ctx.stroke();
+          }
+          ctx.beginPath(); ctx.moveTo(goal.x + 8, field.goalTop); ctx.lineTo(goal.x + 8, field.goalBottom); ctx.stroke();
+        }
+        ctx.strokeRect(field.left, 170, 82, 200);
+        ctx.strokeRect(field.left, 210, 36, 120);
+        ctx.strokeRect(field.right - 82, 170, 82, 200);
+        ctx.strokeRect(field.right - 36, 210, 36, 120);
+        ctx.beginPath(); ctx.ellipse(field.left + 82, 270, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(field.right - 82, 270, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#d8f36a";
+        ctx.font = "bold 12px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("CANCHA BRAVA", 480, 60);
+      }
+
+      function drawPlayer(player) {
+        const palette = colors[player.side];
+        const pose = player.trickPose || "";
+        const slidePose = pose === "BARRIDA" && player.trickPoseUntil > performance.now();
+        const slideProgress = slidePose
+          ? clamp(1 - (player.trickPoseUntil - performance.now()) / 760, 0, 1)
+          : 0;
+        const spinProgress = pose === "RULETA" && player.trickPoseStartedAt
+          ? clamp((performance.now() - player.trickPoseStartedAt) / (player.trickPoseDuration || 700), 0, 1)
+          : 0;
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.scale(1.12, 1.12);
+        ctx.translate(-player.x, -player.y);
+        const takingGoalKick = state.setPiece && state.setPiece.kind === "SAQUE DE ARCO" && state.setPiece.takerId === player.id;
+        const isGoalkeeper = player.goalkeeper || takingGoalKick;
+        const shirtColor = isGoalkeeper ? (player.side === 0 ? "#f2ce45" : "#be7af4") : palette.shirt;
+        const selected = player.id === state.selected && player.side === 0;
+        const shadowY = player.y + 8;
+        if (selected) {
+          ctx.strokeStyle = "#e7ff83";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(player.x, player.y + 1, 17, 12, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "#e7ff83";
+          ctx.beginPath();
+          ctx.moveTo(player.x - 4, player.y - 20); ctx.lineTo(player.x + 4, player.y - 20);
+          ctx.lineTo(player.x, player.y - 14); ctx.fill();
+        }
+        ctx.fillStyle = "#10191888";
+        ctx.beginPath(); ctx.ellipse(player.x + 2, shadowY + 2, 12, 7, 0, 0, Math.PI * 2); ctx.fill();
+        if (slidePose) {
+          const fade = 1 - slideProgress;
+          ctx.save();
+          ctx.globalAlpha = fade * 0.7;
+          ctx.strokeStyle = player.side === 0 ? "#d7f4d0" : "#f4c89a";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(player.x - player.dirX * 38, player.y - player.dirY * 38 + 7);
+          ctx.lineTo(player.x - player.dirX * 12, player.y - player.dirY * 12 + 7);
+          ctx.stroke();
+          ctx.fillStyle = "#e9d7a0";
+          for (let dust = 0; dust < 4; dust++) {
+            const offset = dust * 7;
+            const px = player.x - player.dirX * (24 + offset) + player.dirY * (dust % 2 ? 8 : -8);
+            const py = player.y - player.dirY * (24 + offset) - player.dirX * (dust % 2 ? 8 : -8) + 5;
+            ctx.fillRect(Math.round(px), Math.round(py), 3, 3);
+          }
+          ctx.restore();
+        }
+        if (Math.hypot(player.vx, player.vy) > 80) {
+          ctx.save();
+          ctx.globalAlpha = 0.3;
+          ctx.strokeStyle = palette.glow;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(player.x - player.vx * 0.085, player.y - player.vy * 0.085);
+          ctx.lineTo(player.x - player.vx * 0.15, player.y - player.vy * 0.15);
+          ctx.stroke();
+          ctx.restore();
+        }
+        if (player.action > 0) {
+          const intensity = player.action / 0.72;
+          ctx.save();
+          ctx.globalAlpha = intensity;
+          ctx.strokeStyle = player.side === 0 ? "#eaff76" : "#ffd27b";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, 17 + (1 - intensity) * 15, -1.1, 1.1);
+          ctx.stroke();
+          ctx.strokeStyle = palette.glow;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, 22 + (1 - intensity) * 11, 2.1, 3.5);
+          ctx.stroke();
+          for (let spark = 0; spark < 3; spark++) {
+            const angle = Math.atan2(player.dirY, player.dirX) + (spark - 1) * 0.58;
+            const reach = 24 + (1 - intensity) * 12;
+            const sx = player.x + Math.cos(angle) * reach;
+            const sy = player.y + Math.sin(angle) * reach;
+            ctx.fillStyle = spark === 1 ? "#fff5a8" : palette.glow;
+            ctx.fillRect(Math.round(sx) - 2, Math.round(sy) - 2, 4, 4);
+          }
+          ctx.restore();
+        }
+        ctx.save();
+        if (slidePose) {
+          ctx.translate(player.x, player.y);
+          ctx.rotate(Math.atan2(player.dirY, player.dirX) - Math.PI / 2);
+          ctx.scale(1, 0.72);
+          ctx.translate(-player.x, -player.y);
+        }
+        const pace = Math.hypot(player.vx, player.vy);
+        const stride = pace > 25 ? Math.sin(state.motionTime * 17 + player.id) * 4 : 0;
+        const bicycleLift = pose.startsWith("BICICLETA") ? 9 + Math.abs(Math.sin(state.motionTime * 20)) * 5 : 0;
+        const elasticSweep = pose === "ELASTICA" || pose === "ELASTICA_ARMED" ? Math.sin(state.motionTime * 18) * 8 : 0;
+        const hookSweep = pose === "ENGANCHE" ? 7 : 0;
+        const rouletteShift = pose === "RULETA" ? Math.sin(spinProgress * Math.PI * 2) * 7 : 0;
+        const volleyKick = pose === "VOLEA" ? 12 + Math.sin(state.motionTime * 20) * 3 : 0;
+        const shotKick = pose === "TIRO" ? 9 + Math.sin(state.motionTime * 18) * 2 : 0;
+        const bicycleKick = pose === "CHILENA" ? 15 + Math.sin(state.motionTime * 16) * 4 : 0;
+        const rabonaKick = pose === "RABONA" || pose === "PASE_RABONA" ? 10 : 0;
+        const heelKick = pose === "TACONAZO" || pose === "PASE_TACO" ? 8 : 0;
+        const passSweep = pose === "PASE_DIAGONAL" ? 7 : pose === "PASE_RASO" ? 4 : pose === "PASE_AEREO" || pose === "PASE_ARQUERO" ? 9 : pose === "PASE" ? 5 : 0;
+        const shoulderSwing = pose === "HOMBRO" ? 9 : 0;
+        const chipKick = pose === "VASELINA" ? 11 : 0;
+        const rabonaMotion = pose === "RABONA" || pose === "PASE_RABONA" ? 9 + Math.abs(Math.sin(state.motionTime * 18)) * 3 : 0;
+        const heelMotion = pose === "TACONAZO" || pose === "PASE_TACO" ? 7 + Math.abs(Math.sin(state.motionTime * 17)) * 3 : 0;
+        const chestControl = pose === "CONTROL_PECHO" ? 5 : 0;
+        const footControl = pose === "CONTROL_PIE" ? 8 + Math.abs(Math.sin(state.motionTime * 16)) * 3 : 0;
+        const heelControl = pose === "CONTROL_TALON" ? 9 + Math.abs(Math.sin(state.motionTime * 16)) * 2 : 0;
+        const chestBounce = pose === "CONTROL_PECHO" ? 4 + Math.abs(Math.sin(state.motionTime * 14)) * 3 : 0;
+        ctx.lineCap = "square";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = player.side === 0 ? "#173c42" : "#532821";
+        ctx.beginPath();
+        const leftLegSwing = pose === "BICICLETA_IZQUIERDA" ? -bicycleLift : pose === "BICICLETA_DERECHA" ? bicycleLift : elasticSweep + hookSweep + rouletteShift + stride + volleyKick + shotKick - bicycleKick + rabonaMotion + heelMotion + passSweep + chipKick + footControl - heelControl;
+        const rightLegSwing = pose === "BICICLETA_DERECHA" ? -bicycleLift : pose === "BICICLETA_IZQUIERDA" ? bicycleLift : -elasticSweep + hookSweep - rouletteShift - stride - volleyKick - shotKick + bicycleKick - rabonaMotion + heelMotion - passSweep - chipKick - footControl + heelControl;
+        const kickHeight = Math.max(bicycleLift, volleyKick, shotKick, bicycleKick, footControl, chestBounce);
+        ctx.moveTo(player.x - 4, player.y + 6); ctx.lineTo(player.x - 6 + leftLegSwing, player.y + 14 - kickHeight);
+        ctx.moveTo(player.x + 4, player.y + 6); ctx.lineTo(player.x + 6 + rightLegSwing, player.y + 14 - kickHeight);
+        ctx.stroke();
+        const animatedPose = slidePose || pose.startsWith("BICICLETA") || pose.startsWith("CONTROL_READY") || ["ELASTICA", "ELASTICA_ARMED", "ENGANCHE", "RULETA", "TIRO", "VOLEA", "CHILENA", "RABONA", "TACONAZO", "PASE", "PASE_DIAGONAL", "PASE_AEREO", "PASE_ARQUERO", "PASE_RASO", "PASE_RABONA", "PASE_TACO", "HOMBRO", "VASELINA", "CONTROL_PIE", "CONTROL_PECHO", "CONTROL_TALON"].includes(pose);
+        if (animatedPose) {
+          ctx.fillStyle = "#e8c39b";
+          ctx.fillRect(Math.round(player.x - 8 + leftLegSwing), Math.round(player.y + 12 - kickHeight), 6, 4);
+          ctx.fillRect(Math.round(player.x + 3 + rightLegSwing), Math.round(player.y + 12 - kickHeight), 6, 4);
+          ctx.save();
+          ctx.globalAlpha = 0.75;
+          ctx.strokeStyle = slidePose ? "#f3e3ab" : pose.startsWith("BICICLETA") || pose === "TIRO" || pose === "VOLEA" || pose === "CHILENA" ? "#f6f2a5" : pose === "RULETA" ? "#ffb369" : "#a5f7ef";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          if (pose.startsWith("BICICLETA")) {
+            ctx.ellipse(player.x + player.dirX * 12, player.y + player.dirY * 7, 13, 7, state.motionTime * 4, Math.PI, Math.PI * 1.9);
+          } else if (pose === "VOLEA" || pose === "CHILENA") {
+            ctx.ellipse(player.x + player.dirX * 15, player.y + player.dirY * 8 - kickHeight * 0.55, pose === "CHILENA" ? 21 : 16, 7, Math.atan2(player.dirY, player.dirX), 0, Math.PI * 1.55);
+          } else if (pose === "PASE_AEREO") {
+            ctx.ellipse(player.x + player.dirX * 12, player.y + player.dirY * 7, 18, 7, Math.atan2(player.dirY, player.dirX), 0.1, Math.PI * 1.3);
+          } else if (pose.startsWith("CONTROL")) {
+            ctx.ellipse(player.x, player.y + 10, 19 + Math.sin(state.motionTime * 15) * 2, 8, 0, 0, Math.PI * 2);
+          } else if (pose === "RULETA") {
+            const angle = spinProgress * Math.PI * 2;
+            const ballSideX = player.x;
+            const ballSideY = player.y + 1;
+            ctx.ellipse(ballSideX, ballSideY, 22, 12, 0, -Math.PI / 2, angle - Math.PI / 2);
+            const arrowX = ballSideX + Math.cos(angle - Math.PI / 2) * 22;
+            const arrowY = ballSideY + Math.sin(angle - Math.PI / 2) * 12;
+            const arrowAngle = angle + Math.PI / 2;
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX - Math.cos(arrowAngle - 0.6) * 6, arrowY - Math.sin(arrowAngle - 0.6) * 6);
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX - Math.cos(arrowAngle + 0.6) * 6, arrowY - Math.sin(arrowAngle + 0.6) * 6);
+          } else {
+            ctx.ellipse(player.x + player.dirX * 10, player.y + player.dirY * 6, 16, 7, Math.atan2(player.dirY, player.dirX), 0.1, Math.PI * 1.7);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = shirtColor;
+        const armSwing = slidePose ? 12 : pose === "CHILENA" || pose === "VOLEA" || pose === "TIRO" ? -8 : pose.startsWith("PASE") ? 6 : chestControl ? -5 : pace > 25 ? stride * 0.65 : 0;
+        ctx.beginPath();
+        ctx.moveTo(player.x - 6, player.y - 6); ctx.lineTo(player.x - 11 - shoulderSwing, player.y + armSwing);
+        ctx.moveTo(player.x + 6, player.y - 6); ctx.lineTo(player.x + 11 + shoulderSwing, player.y - armSwing);
+        ctx.stroke();
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = player.side === 0 ? "#dffdfd" : "#ffd1a8";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(player.x - 8, player.y - 5); ctx.lineTo(player.x - 14 + armSwing * 0.7, player.y - 3 + armSwing * 0.4);
+        ctx.moveTo(player.x + 8, player.y - 5); ctx.lineTo(player.x + 14 - armSwing * 0.7, player.y - 3 - armSwing * 0.4);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "#e8c39b";
+        ctx.fillRect(Math.round(player.x - 12), Math.round(player.y + armSwing - 1), 4, 4);
+        ctx.fillRect(Math.round(player.x + 8), Math.round(player.y - armSwing - 1), 4, 4);
+        ctx.fillStyle = palette.dark;
+        ctx.fillRect(Math.round(player.x - 7), Math.round(player.y - 7), 14, 17);
+        ctx.fillStyle = player.side === 0 ? "#183f47" : "#542a24";
+        ctx.fillRect(Math.round(player.x - 7), Math.round(player.y + 3), 14, 7);
+        ctx.fillStyle = "#f3ead0";
+        ctx.fillRect(Math.round(player.x - 6), Math.round(player.y + 4), 12, 2);
+        ctx.fillStyle = shirtColor;
+        ctx.fillRect(Math.round(player.x - 7), Math.round(player.y - 8), 14, 12);
+        ctx.fillStyle = palette.glow;
+        ctx.fillRect(Math.round(player.x - 5), Math.round(player.y - 7), 2, 9);
+        ctx.fillRect(Math.round(player.x + 3), Math.round(player.y - 7), 2, 9);
+        ctx.fillStyle = "#ffffff66";
+        ctx.fillRect(Math.round(player.x - 6), Math.round(player.y - 6), 1, 7);
+        ctx.fillStyle = "#f5efd8";
+        ctx.fillRect(Math.round(player.x - 2), Math.round(player.y - 7), 4, 2);
+        ctx.fillStyle = "#f2c795";
+        ctx.fillRect(Math.round(player.x - 5), Math.round(player.y - 17), 10, 9);
+        ctx.fillStyle = "#18211d";
+        ctx.fillRect(Math.round(player.x + (player.dirX >= 0 ? 1 : -3)), Math.round(player.y - 13), 2, 2);
+        ctx.fillStyle = player.side === 0 ? "#163943" : "#5c2924";
+        ctx.fillRect(Math.round(player.x - 6), Math.round(player.y - 18), 12, 4);
+        ctx.fillStyle = player.side === 0 ? "#38666a" : "#814438";
+        ctx.fillRect(Math.round(player.x - 4), Math.round(player.y - 20), 8, 2);
+        ctx.fillStyle = "#f2c795";
+        ctx.fillRect(Math.round(player.x - 4), Math.round(player.y - 11), 2, 2);
+        if (isGoalkeeper) {
+          ctx.fillStyle = "#f5efd8";
+          ctx.fillRect(Math.round(player.x - 12), Math.round(player.y - 4), 4, 5);
+          ctx.fillRect(Math.round(player.x + 8), Math.round(player.y - 4), 4, 5);
+        }
+        ctx.fillStyle = "#f4edcf";
+        ctx.font = "bold 8px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText(String(player.index + 1), player.x, player.y + 2);
+        if (player.control) {
+          const controlLabel = player.control === "TALÓN" ? "TACÓN" : player.control;
+          ctx.fillStyle = "#172421e8";
+          ctx.fillRect(Math.round(player.x - 26), Math.round(player.y - 34), 52, 12);
+          ctx.fillStyle = "#f3ff9b";
+          ctx.font = "bold 8px Courier New";
+          ctx.fillText(controlLabel, player.x, player.y - 25);
+        }
+        if (state.setPiece && state.setPiece.takerId === player.id) {
+          ctx.fillStyle = "#fff4a8";
+          ctx.font = "bold 9px Courier New";
+          ctx.fillText(state.setPiece.kind === "SAQUE DE ARCO" ? "ARQUERO" : "EJECUTOR", player.x, player.y - 25);
+          ctx.beginPath();
+          ctx.moveTo(player.x - 3, player.y - 21);
+          ctx.lineTo(player.x + 3, player.y - 21);
+          ctx.lineTo(player.x, player.y - 17);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.restore();
+      }
+
+      function drawPassTarget() {
+        if (!state.charge || !["pass", "diagonalPass"].includes(state.charge.mode)) return;
+        const passer = playerById(state.charge.playerId);
+        const isWPass = state.charge.mode === "diagonalPass";
+        const isAerial = isWPass && performance.now() - state.charge.started >= 320;
+        const target = passer && nearestTeammate(passer, false, isWPass && !isAerial);
+        if (!target) return;
+        const pulse = 1 + Math.sin(state.motionTime * 10) * 0.08;
+        ctx.save();
+        ctx.setLineDash([6, 5]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#e7ff83";
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(state.ball.x, state.ball.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.ellipse(target.x, target.y, 20 * pulse, 14 * pulse, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#f3ff9b";
+        ctx.font = "bold 9px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("RECIBE", target.x, target.y - 22);
+        ctx.restore();
+      }
+
+      function drawBall() {
+        const ball = state.ball;
+        const speed = Math.hypot(ball.vx, ball.vy);
+        const lift = Math.max(0, ball.z || 0);
+        const technique = ball.lastTechnique || "";
+        const specialColors = {
+          "VOLEA": "#ffd36a",
+          "CHILENA": "#fff38b",
+          "RABONA": "#ff8ebd",
+          "TACONAZO": "#80f2d5",
+          "VASELINA": "#c49aff"
+        };
+        const trailColor = specialColors[technique] || (ball.lastAction === "shot" ? "#ff765c" : "#9ef1ee");
+        if (speed > 5) {
+          ctx.save();
+          ctx.globalAlpha = Math.min(0.7, speed / 28);
+          ctx.strokeStyle = trailColor;
+          ctx.lineWidth = specialColors[technique] ? 4 : ball.lastAction === "shot" ? 3 : 2;
+          ctx.beginPath();
+          ctx.moveTo(ball.x - ball.vx * 1.15, ball.y - ball.vy * 1.15 - lift);
+          ctx.lineTo(ball.x - ball.vx * 0.35, ball.y - ball.vy * 0.35 - lift);
+          ctx.stroke();
+          if (specialColors[technique]) {
+            ctx.globalAlpha *= 0.55;
+            ctx.beginPath();
+            ctx.moveTo(ball.x - ball.vx * 1.55, ball.y - ball.vy * 1.55 - lift - 3);
+            ctx.lineTo(ball.x - ball.vx * 0.75, ball.y - ball.vy * 0.75 - lift - 3);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        ctx.fillStyle = "#0c1715cc";
+        ctx.beginPath(); ctx.ellipse(ball.x + 2, ball.y + 4, 6.8, 3.2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f7f0d6";
+        ctx.fillRect(Math.round(ball.x - 4), Math.round(ball.y - 4 - lift), 8, 8);
+        ctx.fillStyle = "#d9d0ae";
+        ctx.fillRect(Math.round(ball.x - 3), Math.round(ball.y - 3 - lift), 6, 2);
+        ctx.fillStyle = "#29352e";
+        ctx.fillRect(Math.round(ball.x - 1), Math.round(ball.y - 1 - lift), 3, 3);
+      }
+
+      function drawHud() {
+        roundedRect(370, 10, 220, 42, 4, "#162321ee", "#89a180");
+        ctx.fillStyle = "#41d9e6";
+        ctx.font = "bold 22px Courier New";
+        ctx.textAlign = "right";
+        ctx.fillText(String(state.score[0]).padStart(2, "0"), 445, 39);
+        ctx.fillStyle = "#f5efd8";
+        ctx.textAlign = "center";
+        ctx.font = "bold 13px Courier New";
+        ctx.fillText(formatTime(state.time), 480, 37);
+        ctx.fillStyle = "#ff7d4c";
+        ctx.textAlign = "left";
+        ctx.font = "bold 22px Courier New";
+        ctx.fillText(String(state.score[1]).padStart(2, "0"), 515, 39);
+
+        const player = activePlayer();
+        if (state.charge && player) {
+          const amount = clamp((performance.now() - state.charge.started) / state.charge.max, 0, 1);
+          roundedRect(386, 505, 188, 12, 3, "#1b2926", "#d4e6b1");
+          ctx.fillStyle = state.charge.mode === "shot" ? (amount > 0.8 ? "#ff5757" : "#ff9c51") : "#62e4ef";
+          ctx.fillRect(390, 509, 180 * amount, 4);
+          ctx.fillStyle = "#f5efd8";
+          ctx.textAlign = "center";
+          ctx.font = "bold 10px Courier New";
+          ctx.fillText(state.charge.mode === "shot" ? "TIRO" : state.charge.mode === "diagonalPass" ? "PASE W" : "PASE", 480, 500);
+        } else if (state.specialCharge && player) {
+          const amount = clamp((performance.now() - state.specialCharge.started) / 700, 0, 1);
+          const isShot = performance.now() - state.specialCharge.started >= 280;
+          roundedRect(386, 505, 188, 12, 3, "#1b2926", "#ffc071");
+          ctx.fillStyle = isShot ? "#ff795f" : "#67e3e8";
+          ctx.fillRect(390, 509, 180 * amount, 4);
+          ctx.fillStyle = "#fff1b8";
+          ctx.fillRect(390 + 180 * 0.4, 506, 2, 10);
+          ctx.fillStyle = "#f5efd8";
+          ctx.textAlign = "center";
+          ctx.font = "bold 10px Courier New";
+          const technique = state.specialCharge.key === "r" ? "RABONA" : "TACÓN";
+          ctx.fillText(technique + (isShot ? " · TIRO" : " · PASE"), 480, 500);
+        }
+        if (state.messageTime > 0) {
+          roundedRect(240, 82, 480, 35, 3, "#111c1de8", "#d8f36a");
+          ctx.fillStyle = "#f5efd8";
+          ctx.font = "bold 13px Courier New";
+          ctx.textAlign = "center";
+          ctx.fillText(state.message, 480, 105);
+        }
+        if (state.trickTime > 0) {
+          ctx.fillStyle = "#f5efd8";
+          ctx.font = "bold 14px Courier New";
+          ctx.textAlign = "center";
+          ctx.fillText(state.trickText, 480, 135);
+        }
+        if (state.phase === "setpiece") {
+          roundedRect(324, 246, 312, 62, 4, "#15201feF", "#ffcb66");
+          ctx.fillStyle = "#ffcb66";
+          ctx.textAlign = "center";
+          ctx.font = "bold 17px Courier New";
+          ctx.fillText(state.setPiece ? state.setPiece.kind : "BALÓN PARADO", 480, 272);
+          ctx.fillStyle = "#f5efd8";
+          ctx.font = "12px Courier New";
+          const setup = state.setPiece;
+          const prompt = setup && setup.side === 1
+            ? "REANUDACIÓN CPU..."
+            : canShootSetPiece(setup) ? "Z PASE · MANTÉN X PARA TIRAR" : "PULSA Z PARA SACAR";
+          ctx.fillText(prompt, 480, 292);
+        }
+        if (state.gameOver) {
+          ctx.fillStyle = "#081111bb";
+          ctx.fillRect(field.left, 190, field.right - field.left, 160);
+          ctx.fillStyle = "#d8f36a";
+          ctx.textAlign = "center";
+          ctx.font = "bold 27px Courier New";
+          ctx.fillText("FIN DEL PARTIDO", 480, 245);
+          ctx.fillStyle = "#f5efd8";
+          ctx.font = "bold 17px Courier New";
+          ctx.fillText(state.score[0] === state.score[1] ? "EMPATE" : state.score[0] > state.score[1] ? "¡VICTORIA!" : "GANA LA CPU", 480, 278);
+          ctx.font = "12px Courier New";
+          ctx.fillText("ENTER O NUEVO PARTIDO", 480, 309);
+        }
+      }
+
+      function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remaining = Math.ceil(seconds % 60);
+        return String(minutes).padStart(2, "0") + ":" + String(remaining).padStart(2, "0");
+      }
+
+      function render() {
+        drawField();
+        const ordered = [...state.players].sort((a, b) => a.y - b.y);
+        ordered.forEach(drawPlayer);
+        drawPassTarget();
+        drawBall();
+        drawHud();
+      }
+
+      function frame(timestamp) {
+        const dt = state.lastTime ? Math.min((timestamp - state.lastTime) / 1000, 0.04) : 0;
+        state.lastTime = timestamp;
+        update(dt);
+        render();
+        requestAnimationFrame(frame);
+      }
+
+      window.addEventListener("keydown", event => {
+        const key = event.key === " " ? " " : event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        if (key === "Escape") {
+          event.preventDefault();
+          if (state.practice) {
+            finishPractice();
+          } else if (state.paused) {
+            if (state.overlay === "pause") { state.paused = false; hideOverlay(); }
+            else if (state.overlay === "practice-intro") showControls();
+          } else pauseGame();
+          return;
+        }
+        if (state.paused || state.exited) return;
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Tab"].includes(key)) event.preventDefault();
+        if (key === " ") {
+          if (!keys.has(key)) {
+            keys.add(key);
+            if (!state.paused && !state.exited) switchPlayer();
+          }
+          return;
+        }
+        if (!keys.has(key)) {
+          keys.add(key);
+          const carrier = owner();
+          const preparingPracticeReception = state.practice && state.practiceStep >= 5 && state.practiceStep <= 7;
+          if (carrier && carrier.side === 0 && !preparingPracticeReception &&
+            ["c", "a", "s", "d", "e", "f", "v", "y", "p", "o", "i"].includes(key)) {
+            state.selected = carrier.id;
+          }
+          if (key === "x" || key === "z" || key === "w") startCharge(key);
+          else if ((key === "r" || key === "t") && owner() && owner().side === 0 &&
+            !(state.practice && state.practiceStep >= 5 && state.practiceStep <= 7 && key === "r")) specialChargeStart(key);
+          else if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(key)) pressed.push(key);
+        }
+      });
+      window.addEventListener("keyup", event => {
+        const key = event.key === " " ? " " : event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        keys.delete(key);
+        if (key === "x" || key === "z" || key === "w") endCharge(key);
+        if (key === "r" || key === "t") specialChargeEnd(key);
+      });
+      window.addEventListener("blur", () => {
+        keys.clear();
+        if (state.charge) endCharge(state.charge.key);
+        state.specialCharge = null;
+      });
+      document.getElementById("restart").addEventListener("click", restartMatch);
+      document.getElementById("pause-button").addEventListener("click", () => {
+        if (state.paused && state.overlay === "pause") { state.paused = false; hideOverlay(); }
+        else if (!state.paused) pauseGame();
+      });
+      teamSelect.addEventListener("change", restartMatch);
+
+      createTeams(state.count);
+      showTutorial();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

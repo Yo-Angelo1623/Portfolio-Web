@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AngelTraz</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<!-- ENCABEZADO -->
+
+<header class="header">
+
+    <div class="logo">
+        AngelTraz
+    </div>
+
+    <nav class="nav-buttons">
+
+        <button onclick="mostrarSeccion('inicio')">
+            Inicio
+        </button>
+
+        <button onclick="mostrarSeccion('categorias')">
+            Categorías
+        </button>
+
+        <button onclick="mostrarSeccion('sobre-mi')">
+            Sobre mí
+        </button>
+
+        <button onclick="mostrarSeccion('contacto')">
+            Contacto
+        </button>
+
+        <button onclick="window.location.href='juegos.html'">
+            Juegos
+        </button>
+
+    </nav>
+
+</header>
+
+
+<!-- CONTENIDO PRINCIPAL -->
+
+<main>
+
+    <!-- INICIO -->
+
+    <section id="inicio" class="seccion activa">
+
+        <div class="contenido-simple">
+
+            <h1>AngelTraz</h1>
+
+            <p>
+                Diseño, imagen y creación visual.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- CATEGORÍAS -->
+
+    <section id="categorias" class="seccion">
+
+        <div class="contenido-simple contenido-categorias">
+
+            <h1>Categorías</h1>
+
+            <p>
+                Seis formas distintas de convertir una idea en imagen.
+                Elige una categoría para ver en qué consiste.
+            </p>
+
+            <!-- BOTONES DE CATEGORÍA -->
+
+            <div class="categoria-buttons">
+
+                <button class="activa" onclick="mostrarCategoria('diseno-grafico', this)">
+                    Diseño gráfico
+                </button>
+
+                <button onclick="mostrarCategoria('pod', this)">
+                    POD
+                </button>
+
+                <button onclick="mostrarCategoria('animacion-2d', this)">
+                    Animación 2D
+                </button>
+
+                <button onclick="mostrarCategoria('fotografia', this)">
+                    Fotografía
+                </button>
+
+                <button onclick="mostrarCategoria('modelado-3d', this)">
+                    Modelado 3D
+                </button>
+
+                <button onclick="mostrarCategoria('edicion-video', this)">
+                    Editor de videos
+                </button>
+
+            </div>
+
+            <!-- PANEL DE CADA CATEGORÍA -->
+
+            <div class="categorias-detalle">
+
+                <article id="diseno-grafico" class="categoria-panel activa">
+                    <img src="img/Logo.jpeg" alt="Muestra de trabajo de diseño gráfico">
+                    <h2>Diseño gráfico</h2>
+                    <p>
+                        Creo composiciones, ilustraciones y recursos visuales
+                        buscando que cada propuesta tenga una función y una
+                        identidad propia.
+                    </p>
+                </article>
+
+                <article id="pod" class="categoria-panel">
+                    <img src="IMG/POD.jpeg" alt="Muestra de producto POD">
+                    <h2>POD — Diseño aplicado</h2>
+                    <p>
+                        Llevo las ilustraciones y conceptos gráficos a
+                        productos físicos mediante Print on Demand,
+                        adaptando una misma idea a distintos formatos.
+                    </p>
+                </article>
+
+                <article id="animacion-2d" class="categoria-panel">
+                    <source src="video/Aimación.mp4" type="video/mp4">
+                    <h2>Animación 2D</h2>
+                    <p>
+                        Trabajo con personajes, escenarios y elementos
+                        gráficos para construir piezas animadas y
+                        proyectos audiovisuales.
+                    </p>
+                </article>
+
+                <article id="fotografia" class="categoria-panel">
+                    <img src="img/Vocho.jpeg" alt="Muestra de fotografía">
+                    <h2>Fotografía</h2>
+                    <p>
+                        Llevo la narrativa visual al espacio físico,
+                        experimentando con iluminación, composición,
+                        escenarios y objetos.
+                    </p>
+                </article>
+
+                <article id="modelado-3d" class="categoria-panel">
+                    <img src="img/Sword.png" alt="Muestra de modelado 3D">
+                    <h2>Modelado 3D</h2>
+                    <p>
+                        Construyo objetos, personajes y escenarios desde
+                        una perspectiva tridimensional, ampliando las
+                        herramientas con las que desarrollo una idea.
+                    </p>
+                </article>
+
+                <article id="edicion-video" class="categoria-panel">
+
+                    <video
+                        class="video-muestra"
+                        controls
+                        poster="img/categoria-edicion-video.jpg">
+                        <source src="video/Video.mp4" type="video/mp4">
+                        Tu navegador no soporta la reproducción de video.
+                    </video>
+
+                    <h2>Editor de videos</h2>
+                    <p>
+                        Edito y monto piezas audiovisuales: ritmo, color y
+                        sonido trabajados juntos para narrar una idea
+                        completa, desde el primer corte hasta la entrega final.
+                    </p>
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SOBRE MÍ -->
+
+    <section id="sobre-mi" class="seccion">
+
+        <div class="sobre-mi-container">
+
+            <!-- INTRODUCCIÓN -->
+
+            <div class="sobre-mi-introduccion">
+
+                <span class="etiqueta">
+                    SOBRE MÍ
+                </span>
+
+                <h1>
+                    Diseño, imagen y
+                    creación visual.
+                </h1>
+
+                <p class="introduccion-principal">
+                    Mi marca personal nace del interés por convertir
+                    ideas en imágenes.
+                </p>
+
+                <p>
+                    El diseño gráfico es el punto de partida: desde
+                    la creación de identidades y piezas visuales
+                    hasta la ilustración y el desarrollo de conceptos
+                    propios.
+                </p>
+
+                <p>
+                    A partir de ahí, el trabajo se expande hacia
+                    diferentes medios:
+                </p>
+
+            </div>
+
+
+            <!-- ÁREAS DE CREACIÓN -->
+
+            <div class="areas">
+
+                <!-- DISEÑO GRÁFICO -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        01
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            Diseño gráfico
+                        </h2>
+
+                        <p>
+                            Creo composiciones, ilustraciones y
+                            recursos visuales buscando que cada
+                            propuesta tenga una función y una
+                            identidad propia.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- POD -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        02
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            POD
+                            <span>— Diseño aplicado</span>
+                        </h2>
+
+                        <p>
+                            Llevo las ilustraciones y conceptos
+                            gráficos a productos físicos mediante
+                            Print on Demand, explorando cómo una
+                            misma idea puede adaptarse a diferentes
+                            formatos y niveles de protagonismo.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- ANIMACIÓN 2D -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        03
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            Animación 2D
+                        </h2>
+
+                        <p>
+                            El diseño también cobra movimiento.
+                            Trabajo con personajes, escenarios y
+                            elementos gráficos para construir
+                            pequeñas piezas animadas y proyectos
+                            audiovisuales.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- FOTOGRAFÍA -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        04
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            Fotografía
+                        </h2>
+
+                        <p>
+                            Como siguiente área de exploración,
+                            busco llevar la narrativa visual al
+                            espacio físico, experimentando con
+                            iluminación, composición, escenarios
+                            y objetos.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- MODELADO 3D -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        05
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            Modelado 3D
+                        </h2>
+
+                        <p>
+                            El volumen abre otra posibilidad:
+                            construir objetos, personajes y
+                            escenarios desde una perspectiva
+                            tridimensional, ampliando las
+                            herramientas con las que puedo
+                            desarrollar una idea.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- EDITOR DE VIDEOS -->
+
+                <article class="area">
+
+                    <div class="numero">
+                        06
+                    </div>
+
+                    <div class="area-contenido">
+
+                        <h2>
+                            Editor de videos
+                        </h2>
+
+                        <p>
+                            Monto y edito piezas audiovisuales,
+                            trabajando ritmo, color y sonido para
+                            narrar una idea de principio a fin.
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <!-- CIERRE -->
+
+            <div class="sobre-mi-cierre">
+
+                <h2>
+                    Una misma intención,
+                    <span>diferentes formas de crear.</span>
+                </h2>
+
+                <p>
+                    Mi objetivo es que la marca funcione como un
+                    espacio de experimentación visual, donde diseño
+                    gráfico, ilustración, animación, fotografía,
+                    edición de video y 3D no sean áreas aisladas,
+                    sino distintas maneras de desarrollar y
+                    comunicar una idea.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONTACTO -->
+
+    <section id="contacto" class="seccion">
+
+        <div class="contenido-simple">
+
+            <h1>Contacto</h1>
+
+            <p>
+                Próximamente.
+            </p>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- JAVASCRIPT -->
+
+<script>
+
+    // Cambia de sección principal (Inicio / Categorías / Sobre mí / Contacto)
+    function mostrarSeccion(id) {
+
+        const secciones =
+            document.querySelectorAll(".seccion");
+
+        secciones.forEach(function(seccion) {
+
+            seccion.classList.remove("activa");
+
+        });
+
+        const seccionSeleccionada =
+            document.getElementById(id);
+
+        if (seccionSeleccionada) {
+
+            seccionSeleccionada.classList.add("activa");
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        }
+
+    }
+
+    // Cambia de categoría DENTRO de la sección "Categorías"
+    function mostrarCategoria(id, boton) {
+
+        const paneles =
+            document.querySelectorAll(".categoria-panel");
+
+        paneles.forEach(function(panel) {
+
+            panel.classList.remove("activa");
+
+        });
+
+        const panelSeleccionado =
+            document.getElementById(id);
+
+        if (panelSeleccionado) {
+
+            panelSeleccionado.classList.add("activa");
+
+        }
+
+        const botones =
+            document.querySelectorAll(".categoria-buttons button");
+
+        botones.forEach(function(b) {
+
+            b.classList.remove("activa");
+
+        });
+
+        if (boton) {
+
+            boton.classList.add("activa");
+
+        }
+
+    }
+
+</script>
+
+</body>
+</html>

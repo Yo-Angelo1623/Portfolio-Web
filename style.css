@@ -1,0 +1,677 @@
+/* =========================================
+CONFIGURACIÓN GENERAL
+========================================= */
+
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+
+font-family: 'Segoe UI', sans-serif;
+}
+
+html {
+scroll-behavior: smooth;
+}
+
+body {
+background-color: #000000;
+color: #ffffff;
+
+min-height: 100vh;
+
+
+}
+
+/* =========================================
+ENCABEZADO
+========================================= */
+
+.header {
+width: 100%;
+height: 75px;
+
+background-color: #ffffff;
+
+display: flex;
+justify-content: space-between;
+align-items: center;
+
+padding: 0 40px;
+
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+
+position: sticky;
+top: 0;
+
+z-index: 1000;
+
+
+}
+
+/* LOGO */
+
+.logo {
+color: #000000;
+
+font-size: 24px;
+font-weight: bold;
+
+letter-spacing: -0.5px;
+
+
+}
+
+/* =========================================
+BOTONES DE NAVEGACIÓN
+========================================= */
+
+.nav-buttons {
+display: flex;
+align-items: center;
+
+gap: 8px;
+
+
+}
+
+.nav-buttons button {
+background-color: transparent;
+
+border: none;
+
+color: #000000;
+
+font-size: 15px;
+
+padding: 10px 15px;
+
+border-radius: 6px;
+
+cursor: pointer;
+
+transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
+
+
+}
+
+.nav-buttons button:hover {
+background-color: #000000;
+
+color: #ffffff;
+
+transform: translateY(-2px);
+
+
+}
+
+.nav-buttons button:active {
+transform: translateY(0);
+}
+
+/* =========================================
+SECCIONES
+========================================= */
+
+.seccion {
+display: none;
+
+min-height: calc(100vh - 75px);
+
+background-color: #000000;
+
+color: #ffffff;
+
+
+}
+
+.seccion.activa {
+display: block;
+}
+
+/* =========================================
+CONTENIDO SIMPLE
+INICIO / CATEGORÍAS / CONTACTO
+========================================= */
+
+.contenido-simple {
+max-width: 1100px;
+
+margin: 0 auto;
+
+padding: 100px 40px;
+
+
+}
+
+.contenido-simple h1 {
+color: #ffffff;
+
+font-size: 50px;
+
+margin-bottom: 25px;
+
+
+}
+
+.contenido-simple p {
+color: #ffffff;
+
+font-size: 20px;
+
+line-height: 1.7;
+
+
+}
+
+/* =========================================
+CATEGORÍAS
+========================================= */
+
+.contenido-categorias p {
+    max-width: 700px;
+    margin-bottom: 40px;
+}
+
+/* BOTONES DE CADA CATEGORÍA */
+
+.categoria-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    margin-bottom: 50px;
+
+    padding-bottom: 30px;
+
+    border-bottom: 1px solid #292929;
+}
+
+.categoria-buttons button {
+    background-color: transparent;
+
+    border: 1px solid #444444;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    padding: 10px 18px;
+
+    border-radius: 30px;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.categoria-buttons button:hover {
+    border-color: #bdb79e;
+}
+
+/* BOTÓN DE LA CATEGORÍA QUE ESTÁ ACTIVA */
+
+.categoria-buttons button.activa {
+    background-color: #bdb79e;
+
+    border-color: #bdb79e;
+
+    color: #000000;
+}
+
+/* PANEL DE CONTENIDO DE CADA CATEGORÍA */
+
+.categoria-panel {
+    display: none;
+}
+
+.categoria-panel.activa {
+    display: block;
+
+    max-width: 800px;
+}
+
+.categoria-panel img {
+    width: 100%;
+
+    max-height: 420px;
+
+    object-fit: cover;
+
+    border-radius: 6px;
+
+    margin-bottom: 30px;
+}
+
+.categoria-panel h2 {
+    font-size: 30px;
+
+    font-weight: 500;
+
+    margin-bottom: 15px;
+}
+
+.categoria-panel p {
+    color: #bdbdbd;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+    max-width: 700px;
+}
+
+/* VIDEO DE MUESTRA — CATEGORÍA "EDITOR DE VIDEOS" */
+
+.video-muestra {
+    width: 100%;
+
+    max-height: 420px;
+
+    border-radius: 6px;
+
+    margin-bottom: 30px;
+
+    background-color: #111111;
+}
+
+/* =========================================
+SOBRE MÍ
+========================================= */
+
+.sobre-mi-container {
+max-width: 1100px;
+
+margin: 0 auto;
+
+padding: 90px 40px 100px;
+
+
+}
+
+/* =========================================
+INTRODUCCIÓN
+========================================= */
+
+.sobre-mi-introduccion {
+max-width: 850px;
+
+margin-bottom: 90px;
+
+
+}
+
+/* ETIQUETA SOBRE MÍ */
+
+.etiqueta {
+display: inline-block;
+
+color: #bdb79e;
+
+font-size: 13px;
+
+font-weight: 600;
+
+letter-spacing: 4px;
+
+margin-bottom: 25px;
+
+
+}
+
+/* TÍTULO PRINCIPAL */
+
+.sobre-mi-introduccion h1 {
+color: #ffffff;
+
+font-size: clamp(42px, 6vw, 72px);
+
+line-height: 1.05;
+
+letter-spacing: -2px;
+
+margin-bottom: 35px;
+
+
+}
+
+/* TEXTO */
+
+.sobre-mi-introduccion p {
+max-width: 780px;
+
+color: #cccccc;
+
+font-size: 18px;
+
+line-height: 1.8;
+
+margin-bottom: 20px;
+
+
+}
+
+/* PRIMER PÁRRAFO */
+
+.sobre-mi-introduccion .introduccion-principal {
+color: #ffffff;
+
+font-size: 23px;
+
+line-height: 1.6;
+
+margin-bottom: 20px;
+
+
+}
+
+/* =========================================
+ÁREAS DE CREACIÓN
+========================================= */
+
+.areas {
+border-top: 1px solid #292929;
+}
+
+/* CADA ÁREA */
+
+.area {
+display: grid;
+
+grid-template-columns: 100px 1fr;
+
+gap: 40px;
+
+padding: 45px 0;
+
+border-bottom: 1px solid #292929;
+
+transition:
+    padding-left 0.3s ease,
+    background-color 0.3s ease;
+
+
+}
+
+/* EFECTO AL PASAR EL RATÓN */
+
+.area:hover {
+padding-left: 20px;
+
+background-color: #050505;
+
+
+}
+
+/* NÚMERO */
+
+.numero {
+color: #666666;
+
+font-size: 14px;
+
+font-weight: 600;
+
+letter-spacing: 2px;
+
+padding-top: 7px;
+
+
+}
+
+/* CONTENIDO */
+
+.area-contenido {
+max-width: 800px;
+}
+
+/* TÍTULO DEL ÁREA */
+
+.area-contenido h2 {
+color: #ffffff;
+
+font-size: 30px;
+
+font-weight: 500;
+
+margin-bottom: 15px;
+
+
+}
+
+/* SUBTÍTULO POD */
+
+.area-contenido h2 span {
+color: #777777;
+
+font-size: 22px;
+
+font-weight: 400;
+
+
+}
+
+/* DESCRIPCIÓN */
+
+.area-contenido p {
+color: #bdbdbd;
+
+font-size: 17px;
+
+line-height: 1.8;
+
+max-width: 750px;
+
+
+}
+
+/* =========================================
+CIERRE DE SOBRE MÍ
+========================================= */
+
+.sobre-mi-cierre {
+max-width: 900px;
+
+margin-top: 100px;
+
+padding-top: 60px;
+
+border-top: 1px solid #292929;
+
+
+}
+
+/* FRASE FINAL */
+
+.sobre-mi-cierre h2 {
+color: #ffffff;
+
+font-size: clamp(32px, 5vw, 55px);
+
+line-height: 1.15;
+
+font-weight: 400;
+
+letter-spacing: -1px;
+
+margin-bottom: 30px;
+
+
+}
+
+/* PARTE DESTACADA */
+
+.sobre-mi-cierre h2 span {
+color: #bdb79e;
+}
+
+/* TEXTO FINAL */
+
+.sobre-mi-cierre p {
+max-width: 800px;
+
+color: #bdbdbd;
+
+font-size: 18px;
+
+line-height: 1.8;
+
+
+}
+
+/* =========================================
+RESPONSIVE — MÓVIL
+========================================= */
+
+@media (max-width: 768px) {
+
+/* HEADER */
+
+.header {
+    height: auto;
+
+    padding: 18px 20px;
+
+    flex-direction: column;
+
+    gap: 15px;
+}
+
+
+.nav-buttons {
+    flex-wrap: wrap;
+
+    justify-content: center;
+}
+
+
+.nav-buttons button {
+    font-size: 14px;
+
+    padding: 8px 10px;
+}
+
+
+/* CONTENIDO */
+
+.contenido-simple {
+    padding: 70px 25px;
+}
+
+
+.contenido-simple h1 {
+    font-size: 40px;
+}
+
+
+/* CATEGORÍAS */
+
+.categoria-buttons {
+    gap: 8px;
+
+    margin-bottom: 35px;
+
+    padding-bottom: 20px;
+}
+
+.categoria-buttons button {
+    font-size: 13px;
+
+    padding: 8px 14px;
+}
+
+.categoria-panel img,
+.video-muestra {
+    max-height: 220px;
+}
+
+
+/* SOBRE MÍ */
+
+.sobre-mi-container {
+    padding: 60px 25px 80px;
+}
+
+
+.sobre-mi-introduccion {
+    margin-bottom: 60px;
+}
+
+
+.sobre-mi-introduccion h1 {
+    font-size: 43px;
+
+    letter-spacing: -1px;
+}
+
+
+.sobre-mi-introduccion .introduccion-principal {
+    font-size: 20px;
+}
+
+
+.sobre-mi-introduccion p {
+    font-size: 16px;
+}
+
+
+/* ÁREAS */
+
+.area {
+    grid-template-columns: 45px 1fr;
+
+    gap: 15px;
+
+    padding: 35px 0;
+}
+
+
+.area:hover {
+    padding-left: 10px;
+}
+
+
+.area-contenido h2 {
+    font-size: 24px;
+}
+
+
+.area-contenido h2 span {
+    display: block;
+
+    margin-top: 5px;
+
+    font-size: 17px;
+}
+
+
+.area-contenido p {
+    font-size: 16px;
+}
+
+
+/* CIERRE */
+
+.sobre-mi-cierre {
+    margin-top: 70px;
+
+    padding-top: 45px;
+}
+
+
+.sobre-mi-cierre h2 {
+    font-size: 36px;
+}
+
+
+.sobre-mi-cierre p {
+    font-size: 16px;
+}
+
+
+}
