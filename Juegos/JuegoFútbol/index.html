@@ -52,6 +52,7 @@
       padding: 0 4px 10px;
     }
     .toolbar label { color: var(--muted); }
+    #record { color: var(--muted); font-size: 11px; }
     select, .toolbar button {
       min-height: 32px;
       padding: 5px 10px;
@@ -149,9 +150,15 @@
           <option value="5">5 vs 5</option><option value="6">6 vs 6</option>
           <option value="7">7 vs 7</option>
         </select>
+        <label for="player-mode">Modo</label>
+        <select id="player-mode" aria-label="Modo de juego">
+          <option value="1" selected>1 jugador</option>
+          <option value="2">2 jugadores</option>
+        </select>
         <button id="restart" type="button">NUEVO PARTIDO</button>
         <button id="pause-button" class="pause-button" type="button" aria-label="Pausar partido">PAUSA</button>
         <span id="status" role="status">¡A jugar!</span>
+        <span id="record" aria-live="polite"></span>
       </div>
       <div class="canvas-wrap">
         <canvas id="pitch" width="960" height="540" aria-label="Cancha horizontal de fútbol; usa las flechas y las teclas indicadas"></canvas>
@@ -175,6 +182,8 @@
       const ctx = canvas.getContext("2d");
       const status = document.getElementById("status");
       const teamSelect = document.getElementById("team-size");
+      const playerModeSelect = document.getElementById("player-mode");
+      const recordLabel = document.getElementById("record");
       const overlay = document.getElementById("game-overlay");
       const overlayTitle = document.getElementById("overlay-title");
       const overlayContent = document.getElementById("overlay-content");
@@ -184,6 +193,7 @@
       const field = { left: 66, right: 894, top: 70, bottom: 470, goalTop: 195, goalBottom: 345 };
       const keys = new Set();
       const pressed = [];
+      const recordStorageKey = "cancha-brava-records";
       const colors = [{ shirt: "#45d9e6", dark: "#137987", glow: "#8cffff" }, { shirt: "#ff7d4c", dark: "#9e3829", glow: "#ffc071" }];
       const outfieldFormations = {
         1: [[0.34, 0]],
@@ -194,14 +204,35 @@
         6: [[0.2, -0.32], [0.2, 0.32], [0.46, 0], [0.62, -0.38], [0.62, 0], [0.62, 0.38]]
       };
       const state = {
-        count: 3, players: [], ball: { x: 480, y: 300, vx: 0, vy: 0, z: 0, vz: 0, owner: null },
-        score: [0, 0], selected: 0, time: 180, lastTime: 0, phase: "play", setPiece: null,
+        count: 3, playerMode: 1, players: [], ball: { x: 480, y: 300, vx: 0, vy: 0, z: 0, vz: 0, owner: null },
+        score: [0, 0], selected: 0, player2Selected: null, records: readRecords(), time: 180, lastTime: 0, phase: "play", setPiece: null,
         message: "", messageTime: 0, charge: null, specialCharge: null, specialShotPending: null, lastTrick: 0, trickText: "", trickTime: 0,
         pressure: 0, slide: 0, tackle: 0, swap: 0, aiKick: 0, possession: 0,
         lastTouch: null, gameOver: false, paused: false, overlay: "", tutorialStep: 0, restartTimer: 0,
         exited: false, particles: [], motionTime: 0, practice: false, practiceSnapshot: null,
         practiceStep: 0, practiceTimer: 0
       };
+
+      function readRecords() {
+        const saved = JSON.parse(localStorage.getItem(recordStorageKey) || "{}");
+        return {
+          wasd: Number.isFinite(saved.wasd) ? Math.max(0, saved.wasd) : 0,
+          arrows: Number.isFinite(saved.arrows) ? Math.max(0, saved.arrows) : 0
+        };
+      }
+
+      function updateRecords() {
+        state.records.wasd = Math.max(state.records.wasd, state.score[0]);
+        if (state.playerMode === 2) state.records.arrows = Math.max(state.records.arrows, state.score[1]);
+        localStorage.setItem(recordStorageKey, JSON.stringify(state.records));
+        recordLabel.textContent = `Récords · WASD ${state.records.wasd} — Flechas ${state.records.arrows}`;
+      }
+
+      function isHumanControlled(player) {
+        return player.side === 0
+          ? player.id === state.selected
+          : state.playerMode === 2 && player.id === state.player2Selected;
+      }
 
       function createTeams(count) {
         state.count = count;
@@ -237,6 +268,9 @@
           });
         }
         state.selected = count >= 2 ? 1 : 0;
+        const secondPlayer = state.players.find(player => player.side === 1 && !player.goalkeeper) ||
+          state.players.find(player => player.side === 1);
+        state.player2Selected = secondPlayer ? secondPlayer.id : null;
         resetKickoff(0);
       }
 
@@ -266,6 +300,7 @@
 
       function restartMatch() {
         state.score = [0, 0];
+        state.playerMode = Number(playerModeSelect.value);
         state.time = 180;
         state.gameOver = false;
         state.paused = false;
@@ -274,6 +309,7 @@
         state.trickText = "";
         state.specialShotPending = null;
         createTeams(Number(teamSelect.value));
+        updateRecords();
         status.textContent = "¡A jugar!";
         showTutorial();
       }
@@ -323,24 +359,26 @@
       function showControls() {
         const returnTo = state.overlay === "start" ? "start" : "pause";
         state.paused = true;
-        showOverlay("controls", "GUÍA COMPLETA DE CONTROLES",
-          "<ul>" +
-          "<li><strong>Mover:</strong> solo flechas. La dirección que llevas también apunta el pase o el tiro.</li>" +
-          "<li><strong>Con balón:</strong> mantén X para cargar el tiro al arco y suelta para disparar. Mantén Z y suelta para pasar a un compañero; cuanto más tiempo, más fuerza. El pase no se dirige al arco y el receptor aparece marcado. En 1 vs 1 no hay compañero y el pase no se ejecuta.</li>" +
-          "<li><strong>Sin balón:</strong> Z intenta un quite normal; X hace una barrida con más alcance y recuperación más lenta. Apunta hacia el balón y evita lanzarte contra el arquero cuando lo controla. Durante un regate o jugada técnica, el rival solo podrá intentar una barrida; si falla, puede cometer falta.</li>" +
-          "<li><strong>W — pase especial:</strong> toca y suelta para un pase raso diagonal; mantenlo al menos 0,32 s y suelta para un pase aéreo.</li>" +
-          "<li><strong>E — remate especial:</strong> pulsa una vez para volea al arco; pulsa E otra vez dentro de 0,42 s para hacer una chilena.</li>" +
-          "<li><strong>R y T:</strong> toque breve (menos de 0,28 s) para pase de rabona (R) o de taco (T); mantén al menos 0,28 s y suelta para rematar con esa técnica. La barra marca el cambio de pase a tiro. <strong>F</strong> hace una vaselina y <strong>V</strong> un golpe de hombro para proteger/empujar en carrera.</li>" +
-          "<li><strong>Cambiar jugador:</strong> pulsa Espacio para pasar el control a tu siguiente compañero.</li>" +
-          "<li><strong>Presión:</strong> mantén Shift mientras te acercas al rival para acelerar la presión.</li>" +
-          "<li><strong>Regates:</strong> cada C mueve el balón ligeramente arriba o abajo al alternar la pierna de la bicicleta; A necesita dos pulsaciones antes de 2 segundos para completar la elástica; S hace un enganche diagonal; D hace girar el balón alrededor del jugador y tiene 10 segundos de espera. Mientras se ejecuta una jugada técnica, el rival no puede quitarte el balón con un quite normal.</li>" +
-          "<li><strong>Otras jugadas:</strong> Y/P/O/I son variantes de pase; Q/E/R preparan controles al recibir cuando no tienes el balón. El tipo preparado se muestra sobre tu jugador.</li>" +
-          "<li><strong>Líneas y faltas:</strong> el balón rebota en las líneas y sigue en juego; no hay saques laterales, de esquina ni de arco. Las faltas se reanudan con Z; en tiros libres de ataque o penales puedes mantener X para tirar.</li>" +
-          "<li><strong>Pausa:</strong> Escape o el botón PAUSA abre este menú.</li>" +
-          "</ul>", [
-            { label: "Practicar jugadas especiales", primary: true, run: showPracticeIntro },
-            { label: "Volver", run: () => returnTo === "start" ? showStart() : pauseGame() }
-          ]);
+        const content = state.playerMode === 2
+          ? "<ul>" +
+            "<li><strong>Jugador WASD:</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para moverse, <kbd>Q</kbd> para tirar y <kbd>E</kbd> para pasar.</li>" +
+            "<li><strong>Jugador de flechas:</strong> <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> para moverse, <kbd>P</kbd> para tirar y <kbd>O</kbd> para pasar.</li>" +
+            "<li>Cada jugador controla un equipo distinto. Los compañeros y arqueros siguen controlados por la CPU.</li>" +
+            "<li>Para pasar o tirar, tu jugador debe tener el balón. Si un compañero lo recupera, pulsa la acción de tu lado para tomar su control.</li>" +
+            "<li>El balón rebota en las líneas y sigue en juego. Escape o el botón PAUSA abre este menú.</li>" +
+            "</ul>"
+          : "<ul>" +
+            "<li><strong>Mover:</strong> solo flechas. La dirección que llevas también apunta el pase o el tiro.</li>" +
+            "<li><strong>Con balón:</strong> mantén X para cargar el tiro al arco y suelta para disparar. Mantén Z y suelta para pasar a un compañero; cuanto más tiempo, más fuerza. El pase no se dirige al arco y el receptor aparece marcado. En 1 vs 1 no hay compañero y el pase no se ejecuta.</li>" +
+            "<li><strong>Sin balón:</strong> Z intenta un quite normal; X hace una barrida con más alcance y recuperación más lenta. Apunta hacia el balón y evita lanzarte contra el arquero cuando lo controla.</li>" +
+            "<li><strong>Jugadas especiales:</strong> W pase diagonal o aéreo; E volea o chilena; R/T pases de rabona o tacón al toque y remates al mantenerlos; F vaselina; V golpe de hombro. C/A/S/D hacen regates.</li>" +
+            "<li><strong>Cambiar jugador:</strong> pulsa Espacio para pasar el control a tu siguiente compañero.</li>" +
+            "<li><strong>Pausa:</strong> Escape o el botón PAUSA abre este menú. Consulta la práctica para aprender las jugadas especiales.</li>" +
+            "</ul>";
+        const actions = [];
+        if (state.playerMode === 1) actions.push({ label: "Practicar jugadas especiales", primary: true, run: showPracticeIntro });
+        actions.push({ label: "Volver", run: () => returnTo === "start" ? showStart() : pauseGame() });
+        showOverlay("controls", "GUÍA COMPLETA DE CONTROLES", content, actions);
       }
 
       function showPracticeIntro() {
@@ -530,7 +568,15 @@
       function showTutorial(step = 0) {
         state.paused = true;
         state.tutorialStep = step;
-        const [title, content] = tutorialSteps[step];
+        const [title, defaultContent] = tutorialSteps[step];
+        const playerContent = [
+          "<p>Jugador WASD: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para moverse. Jugador de flechas: <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>. Cada quien controla un equipo distinto.</p>",
+          "<p>Con el balón, el jugador WASD pulsa <kbd>Q</kbd> para tirar o <kbd>E</kbd> para pasar; el jugador de flechas pulsa <kbd>P</kbd> para tirar u <kbd>O</kbd> para pasar.</p>",
+          "<p>Acércate al balón para recuperarlo. Los compañeros y arqueros se mueven con la CPU; para tirar o pasar debes tener el balón.</p>",
+          "<p>Cada jugador controla un equipo distinto. El balón rebota en las líneas; usa PAUSA para consultar los controles.</p>",
+          "<p>¡Listos para el partido! <kbd>Q</kbd>/<kbd>E</kbd> son las acciones del jugador WASD y <kbd>P</kbd>/<kbd>O</kbd> las del jugador de flechas.</p>"
+        ][step];
+        const content = state.playerMode === 2 ? playerContent : defaultContent;
         const actions = [];
         if (step > 0) actions.push({ label: "Anterior", run: () => showTutorial(step - 1) });
         actions.push({
@@ -674,8 +720,13 @@
       }
 
       function aimDirection(player) {
-        let dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
-        let dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
+        const wasd = state.playerMode === 2 && player.side === 0;
+        const right = wasd ? "d" : "ArrowRight";
+        const left = wasd ? "a" : "ArrowLeft";
+        const down = wasd ? "s" : "ArrowDown";
+        const up = wasd ? "w" : "ArrowUp";
+        let dx = (keys.has(right) ? 1 : 0) - (keys.has(left) ? 1 : 0);
+        let dy = (keys.has(down) ? 1 : 0) - (keys.has(up) ? 1 : 0);
         if (!dx && !dy) { dx = player.dirX; dy = player.dirY; }
         const length = Math.hypot(dx, dy) || 1;
         return { x: dx / length, y: dy / length };
@@ -940,8 +991,13 @@
       }
 
       function moveUser(player, dt) {
-        let dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
-        let dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
+        const wasd = state.playerMode === 2 && player.side === 0;
+        const right = wasd ? "d" : "ArrowRight";
+        const left = wasd ? "a" : "ArrowLeft";
+        const down = wasd ? "s" : "ArrowDown";
+        const up = wasd ? "w" : "ArrowUp";
+        let dx = (keys.has(right) ? 1 : 0) - (keys.has(left) ? 1 : 0);
+        let dy = (keys.has(down) ? 1 : 0) - (keys.has(up) ? 1 : 0);
         const length = Math.hypot(dx, dy) || 1;
         dx /= length;
         dy /= length;
@@ -1105,7 +1161,7 @@
       function cpuDecision(dt) {
         const player = owner();
         if (!player || state.phase !== "play" || state.practice ||
-          (player.side === 0 && player.id === state.selected)) return;
+          isHumanControlled(player)) return;
         player.aiKick = (player.aiKick || 0) + dt;
         const attackDirection = player.side === 0 ? 1 : -1;
         const goalX = player.side === 0 ? field.right - 8 : field.left + 8;
@@ -1141,7 +1197,7 @@
         if (carrier.goalkeeper) return;
         if (state.charge && state.charge.playerId === carrier.id && carrier.side === 0) return;
         const protectedSkill = isProtectedSkillMove(carrier);
-        const defenders = ownPlayers(opponent(carrier.side)).filter(player => player.id !== state.selected);
+        const defenders = ownPlayers(opponent(carrier.side)).filter(player => !isHumanControlled(player));
         const defender = defenders.reduce((closest, player) =>
           !closest || dist(player, carrier) < dist(closest, carrier) ? player : closest, null);
         if (!defender) return;
@@ -1212,7 +1268,8 @@
             }
             const scorer = crossedRight ? 0 : 1;
             state.score[scorer]++;
-            say(scorer === 0 ? "¡GOOOL DEL EQUIPO TURQUESA!" : "¡GOL DE LA CPU!", 2.5);
+            updateRecords();
+            say(scorer === 0 ? "¡GOOOL DEL EQUIPO TURQUESA!" : state.playerMode === 2 ? "¡GOOOL DEL EQUIPO NARANJA!" : "¡GOL DE LA CPU!", 2.5);
             state.trickText = "¡GOOOL!";
             state.trickTime = 2;
             resetKickoff(opponent(scorer), 1.4);
@@ -1463,7 +1520,7 @@
           } else if (state.phase === "restartPause") {
             player.vx = 0;
             player.vy = 0;
-          } else if (player.side === 0 && player.id === state.selected) moveUser(player, dt);
+          } else if (isHumanControlled(player)) moveUser(player, dt);
           else moveCpu(player, dt);
           player.stamina = clamp(player.stamina + dt * 0.018, 0.35, 1);
         }
@@ -1488,7 +1545,7 @@
             }
           }
         }
-        applyPressure(activePlayer(), dt);
+        if (state.playerMode === 1) applyPressure(activePlayer(), dt);
         if (state.phase === "play") {
           cpuDecision(dt);
           resolveBall(dt);
@@ -1507,10 +1564,21 @@
           if (state.gameOver) restartMatch();
           return;
         }
-        if (key === "Tab") { switchPlayer(); return; }
-        if (key === "g") { executeTackle(player, false); return; }
-        if (key === "h") { executeTackle(player, true); return; }
+        if (key === "Tab" && state.playerMode === 1) { switchPlayer(); return; }
+        if (key === "g" && state.playerMode === 1) { executeTackle(player, false); return; }
+        if (key === "h" && state.playerMode === 1) { executeTackle(player, true); return; }
         if (state.phase !== "play" || state.gameOver) return;
+        if (state.playerMode === 2) {
+          const carrier = owner();
+          const playerId = key === "q" || key === "e" ? state.selected
+            : key === "p" || key === "o" ? state.player2Selected
+              : null;
+          const controlledPlayer = playerById(playerId);
+          if (!carrier || !controlledPlayer || carrier.id !== controlledPlayer.id) return;
+          if (key === "q" || key === "p") shoot(controlledPlayer, 15.5, "TIRO");
+          else if (key === "e" || key === "o") pass(controlledPlayer, "short");
+          return;
+        }
         if (state.practice && state.practiceStep >= 5 && state.practiceStep <= 7 && ["q", "e", "r"].includes(key)) {
           const controls = { q: "PIE", e: "PECHO", r: "TALÓN" };
           player.control = controls[key];
@@ -1791,7 +1859,7 @@
         const takingGoalKick = state.setPiece && state.setPiece.kind === "SAQUE DE ARCO" && state.setPiece.takerId === player.id;
         const isGoalkeeper = player.goalkeeper || takingGoalKick;
         const shirtColor = isGoalkeeper ? (player.side === 0 ? "#f2ce45" : "#be7af4") : palette.shirt;
-        const selected = player.id === state.selected && player.side === 0;
+        const selected = isHumanControlled(player);
         const shadowY = player.y + 8;
         if (selected) {
           ctx.strokeStyle = "#e7ff83";
@@ -2153,7 +2221,7 @@
           ctx.fillText("FIN DEL PARTIDO", 480, 245);
           ctx.fillStyle = "#f5efd8";
           ctx.font = "bold 17px Courier New";
-          ctx.fillText(state.score[0] === state.score[1] ? "EMPATE" : state.score[0] > state.score[1] ? "¡VICTORIA!" : "GANA LA CPU", 480, 278);
+          ctx.fillText(state.score[0] === state.score[1] ? "EMPATE" : state.score[0] > state.score[1] ? "¡VICTORIA!" : state.playerMode === 2 ? "GANA JUGADOR FLECHAS" : "GANA LA CPU", 480, 278);
           ctx.font = "12px Courier New";
           ctx.fillText("ENTER O NUEVO PARTIDO", 480, 309);
         }
@@ -2195,11 +2263,11 @@
           return;
         }
         if (state.paused || state.exited) return;
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Tab"].includes(key)) event.preventDefault();
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Tab", "w", "a", "s", "d"].includes(key)) event.preventDefault();
         if (key === " ") {
           if (!keys.has(key)) {
             keys.add(key);
-            if (!state.paused && !state.exited) switchPlayer();
+            if (state.playerMode === 1 && !state.paused && !state.exited) switchPlayer();
           }
           return;
         }
@@ -2207,21 +2275,25 @@
           keys.add(key);
           const carrier = owner();
           const preparingPracticeReception = state.practice && state.practiceStep >= 5 && state.practiceStep <= 7;
-          if (carrier && carrier.side === 0 && !preparingPracticeReception &&
+          if (state.playerMode === 2 && carrier &&
+            (["q", "e"].includes(key) && carrier.side === 0 || ["p", "o"].includes(key) && carrier.side === 1)) {
+            if (carrier.side === 0) state.selected = carrier.id;
+            else state.player2Selected = carrier.id;
+          } else if (carrier && carrier.side === 0 && !preparingPracticeReception &&
             ["c", "a", "s", "d", "e", "f", "v", "y", "p", "o", "i"].includes(key)) {
             state.selected = carrier.id;
           }
-          if (key === "x" || key === "z" || key === "w") startCharge(key);
-          else if ((key === "r" || key === "t") && owner() && owner().side === 0 &&
+          if (state.playerMode === 1 && (key === "x" || key === "z" || key === "w")) startCharge(key);
+          else if (state.playerMode === 1 && (key === "r" || key === "t") && owner() && owner().side === 0 &&
             !(state.practice && state.practiceStep >= 5 && state.practiceStep <= 7 && key === "r")) specialChargeStart(key);
-          else if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(key)) pressed.push(key);
+          else if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift", "w", "a", "s", "d"].includes(key)) pressed.push(key);
         }
       });
       window.addEventListener("keyup", event => {
         const key = event.key === " " ? " " : event.key.length === 1 ? event.key.toLowerCase() : event.key;
         keys.delete(key);
-        if (key === "x" || key === "z" || key === "w") endCharge(key);
-        if (key === "r" || key === "t") specialChargeEnd(key);
+        if (state.playerMode === 1 && (key === "x" || key === "z" || key === "w")) endCharge(key);
+        if (state.playerMode === 1 && (key === "r" || key === "t")) specialChargeEnd(key);
       });
       window.addEventListener("blur", () => {
         keys.clear();
@@ -2234,8 +2306,10 @@
         else if (!state.paused) pauseGame();
       });
       teamSelect.addEventListener("change", restartMatch);
+      playerModeSelect.addEventListener("change", restartMatch);
 
       createTeams(state.count);
+      updateRecords();
       showTutorial();
       requestAnimationFrame(frame);
     })();

@@ -89,6 +89,7 @@ export class Game {
     ];
     this.routeIndex = 0;
     this.routeComplete = false;
+    this.bestRoute = Math.max(0, Number.parseInt(localStorage.getItem('la-piedra-invisible-best-route') || '0', 10) || 0);
     this.routeMarkers = [];
     this.contactCooldown = 0;
     this.inventory = {
@@ -109,6 +110,7 @@ export class Game {
     this.updateHealthUI();
     this.updateStaminaUI();
     this.updateToolUI();
+    this.updateRouteRecord();
     this.updateCamera();
     this.animate();
   }
@@ -799,6 +801,7 @@ export class Game {
       endOverlay: document.getElementById('endOverlay'),
       endTitle: document.getElementById('endTitle'),
       endMessage: document.getElementById('endMessage'),
+      endRecord: document.getElementById('endRecord'),
       healthValue: document.getElementById('healthValue'),
       healthFill: document.getElementById('healthFill'),
       staminaValue: document.getElementById('staminaValue'),
@@ -812,6 +815,7 @@ export class Game {
       currentTool: document.getElementById('currentTool'),
       toolDetail: document.getElementById('toolDetail'),
       objectiveStatus: document.getElementById('objectiveStatus'),
+      routeRecord: document.getElementById('routeRecord'),
       startButton: document.getElementById('startButton'),
       resumeButton: document.getElementById('resumeButton'),
       optionsButton: document.getElementById('optionsButton'),
@@ -978,6 +982,7 @@ export class Game {
     this.keys = {};
     this.hud.menuOverlay.classList.remove('visible');
     this.hud.endOverlay.classList.add('visible');
+    this.updateRouteRecord();
     if (outcome === 'victory') {
       this.hud.endTitle.textContent = '¡Llegaste a salvo!';
       this.hud.endMessage.textContent = 'Completaste la ruta de evacuación y alcanzaste el punto de encuentro.';
@@ -1596,6 +1601,7 @@ export class Game {
       this.routeIndex += 1;
     }
 
+    this.updateRouteRecord();
     this.routeComplete = this.routeIndex >= this.routeWaypoints.length;
     this.updateRouteMarkers();
     if (this.routeComplete) {
@@ -1610,6 +1616,17 @@ export class Game {
       this.player.position.z - waypoint.position.z
     );
     this.hud.objectiveStatus.textContent = `Tramo ${this.routeIndex + 1}/${this.routeWaypoints.length} · ${waypoint.label} · ${Math.round(distance)} m`;
+  }
+
+  updateRouteRecord() {
+    if (this.routeIndex > this.bestRoute) {
+      this.bestRoute = this.routeIndex;
+      localStorage.setItem('la-piedra-invisible-best-route', String(this.bestRoute));
+    }
+
+    const record = `Récord de ruta: ${this.bestRoute}/${this.routeWaypoints.length} tramos`;
+    this.hud.routeRecord.textContent = record;
+    this.hud.endRecord.textContent = record;
   }
 
   updateRouteMarkers() {

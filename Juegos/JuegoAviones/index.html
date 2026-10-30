@@ -177,7 +177,7 @@
     </div>
     <div class="map-panel"><div class="map-heading"><span>Vista</span><strong id="map-distance">1.5 km</strong></div><canvas id="minimap" width="144" height="144" aria-label="Minimapa orientado hacia la cámara con enemigos, aviones y objetivo"></canvas></div>
     <div class="bottom">
-      <div class="objective"><div class="objective-mark" id="phase-mark">01</div><div><small>Fase <span id="phase-number">1/4</span> · <span id="distance">1.5 km</span></small><span id="phase-objective">Cruza el bosque de ceniza</span></div></div>
+      <div class="objective"><div class="objective-mark" id="phase-mark">01</div><div><small>Fase <span id="phase-number">1/4</span> · <span id="distance">1.5 km</span></small><span id="phase-objective">Cruza el bosque de ceniza</span><small id="record-value" aria-live="polite"></small></div></div>
       <div class="controls"><div class="key-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="control-name">mover</span></div><div class="key-group"><kbd>⇧</kbd><span class="control-name">correr</span></div><div class="key-group"><kbd>ESP</kbd><span class="control-name">salto</span></div><div class="key-group"><kbd>E</kbd><span class="control-name">atacar</span></div><div class="key-group"><kbd>F</kbd><span class="control-name">impacto aéreo</span></div><div class="key-group"><kbd>Q</kbd><span class="control-name">bajar del avión</span></div><div class="key-group"><kbd>1-3</kbd><span class="control-name">armas</span></div><div class="key-group"><kbd>RMB</kbd><span class="control-name">girar vista</span></div></div>
     </div>
   </div>
@@ -540,9 +540,23 @@
     const phaseNumber = document.querySelector('#phase-number');
     const phaseObjective = document.querySelector('#phase-objective');
     const missionPhase = document.querySelector('#mission-phase');
+    const recordValue = document.querySelector('#record-value');
     const phaseToast = document.querySelector('#phase-toast');
     const toastLabel = document.querySelector('#toast-label');
     const toastTitle = document.querySelector('#toast-title');
+    const recordStorageKey = 'el-escape-best-records';
+    const storedRecords = JSON.parse(localStorage.getItem(recordStorageKey) || '{}');
+    const records = {
+      distance: Number.isFinite(storedRecords.distance) ? Math.max(0, storedRecords.distance) : 0,
+      kills: Number.isFinite(storedRecords.kills) ? Math.max(0, storedRecords.kills) : 0,
+    };
+    function updateRecords() {
+      records.distance = Math.max(records.distance, GOAL_DISTANCE - distance);
+      records.kills = Math.max(records.kills, kills);
+      localStorage.setItem(recordStorageKey, JSON.stringify(records));
+      recordValue.textContent = `Récord: ${Math.floor(records.distance)} m · ${records.kills} bajas`;
+    }
+    updateRecords();
     const flightPrompt = document.querySelector('#flight-prompt');
     const endingCaption = document.querySelector('#ending-caption');
     const landscapeStage = document.querySelector('#landscape-stage');
@@ -737,7 +751,7 @@
     }
     function killSoldier(enemy) {
       if (!enemy.userData.alive) return;
-      enemy.userData.alive = false; enemy.visible = false; kills++; scoreBurst(enemy.position.x, enemy.position.z);
+      enemy.userData.alive = false; enemy.visible = false; kills++; updateRecords(); scoreBurst(enemy.position.x, enemy.position.z);
     }
     function damagePlane(plane, amount) {
       if (!plane.userData.alive) return;
@@ -791,6 +805,7 @@
     }
     function finish(won, aircraftDestroyed = false) {
       playing = false;
+      updateRecords();
       const overlay = document.querySelector('#end-overlay'); overlay.classList.toggle('won', won);
       if (won) {
         ending = { elapsed: 0, mode: pilotedPlane ? 'plane' : 'foot' };

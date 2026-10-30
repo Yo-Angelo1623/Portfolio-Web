@@ -98,6 +98,12 @@ button.active {
     font-size: 14px;
 }
 
+#record {
+    margin: 0 0 8px;
+    color: #aaa;
+    font-size: 12px;
+}
+
 /* =========================
    GAME
 ========================= */
@@ -259,6 +265,7 @@ button.active {
         </div>
 
     </div>
+    <div id="record" aria-live="polite"></div>
 
     <canvas
         id="canvas"
@@ -367,6 +374,9 @@ const leftScoreEl =
 const rightScoreEl =
     document.getElementById("rightScore");
 
+const recordEl =
+    document.getElementById("record");
+
 const flash =
     document.getElementById("flash");
 
@@ -386,6 +396,23 @@ let cpuScore = 0;
 let playerLives = 3;
 
 let paused = false;
+
+const recordStorageKey = "impossible-ping-pong-records";
+const storedRecords = JSON.parse(localStorage.getItem(recordStorageKey) || "{}");
+const records = {
+    player1: Number.isFinite(storedRecords.player1) ? Math.max(0, storedRecords.player1) : 0,
+    player2: Number.isFinite(storedRecords.player2) ? Math.max(0, storedRecords.player2) : 0
+};
+
+function updateRecords() {
+    records.player1 = Math.max(records.player1, playerScore);
+    if (mode === "multi") {
+        records.player2 = Math.max(records.player2, cpuScore);
+    }
+
+    localStorage.setItem(recordStorageKey, JSON.stringify(records));
+    recordEl.textContent = `Récords · Jugador 1: ${records.player1} · Jugador 2: ${records.player2}`;
+}
 
 
 /* =========================================================
@@ -1526,6 +1553,8 @@ function updateBalls() {
 
                 cpuScore++;
 
+                updateRecords();
+
                 setMessage(
                     "CPU scores."
                 );
@@ -1549,6 +1578,8 @@ function updateBalls() {
             ball.active = false;
 
             playerScore++;
+
+            updateRecords();
 
             setMessage(
                 "Nice shot."
@@ -2142,6 +2173,8 @@ function updateHUD() {
             `CPU: ${cpuScore}`;
 
     }
+
+    recordEl.textContent = `Récords · Jugador 1: ${records.player1} · Jugador 2: ${records.player2}`;
 
 }
 

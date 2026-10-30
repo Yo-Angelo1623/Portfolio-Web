@@ -8,7 +8,7 @@
       name="description"
       content="Prototipo de FPS de supervivencia urbana no letal"
     />
-    <script type="module" crossorigin src="/assets/index-BfD6PnBQ.js"></script>
+    <script type="module" crossorigin src="/assets/index-Dtfnp9m6.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-3RCI8fLr.css">
   </head>
   <body>
@@ -89,6 +89,7 @@
 
         <div class="help-box">
           <h2>Controles</h2>
+          <p id="routeRecord" role="status">Récord de ruta: 0/3 tramos</p>
           <ul>
             <li>WASD o flechas para caminar.</li>
             <li>Mantén Q para correr más rápido; consume resistencia.</li>
@@ -110,12 +111,12 @@
         <p class="eyebrow">Fin de la partida</p>
         <h2 id="endTitle">La ruta se interrumpió</h2>
         <p id="endMessage" class="end-message"></p>
+        <p id="endRecord" class="end-message"></p>
         <div class="button-stack">
           <button id="endRestartButton" class="primary">Jugar de nuevo</button>
           <button id="endMenuButton" class="secondary">Volver al menú</button>
         </div>
       </div>
     </div>
-
-  </body>
+  </body>
 </html>

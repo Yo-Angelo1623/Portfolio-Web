@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manual técnico de auditoría e infraestructura | AngelTraz</title>
+  <style>
+    @page { size: 20in 11.25in; margin: 0; }
+    :root {
+      color-scheme: dark;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #eef4ed;
+      background: #10191d;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 20in; height: 11.25in; margin: 0; }
+    body { font-size: 15px; }
+    .page {
+      width: 20in;
+      height: 11.25in;
+      padding: 34px 42px 28px;
+      display: grid;
+      grid-template-rows: 92px 358px 1fr 28px;
+      gap: 16px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 87% 2%, #20343a 0, transparent 37%),
+        linear-gradient(140deg, #121d21, #0b1216 76%);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #33464b;
+    }
+    .eyebrow, .kicker {
+      margin: 0 0 7px;
+      color: #b6d65e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: 32px; line-height: 1; letter-spacing: -.035em; }
+    .header-meta { text-align: right; color: #adbbb8; font-size: 12px; line-height: 1.7; }
+    .header-meta strong { color: #eef4ed; }
+    .top-grid { display: grid; grid-template-columns: 1.18fr .82fr; gap: 16px; min-height: 0; }
+    .panel {
+      min-width: 0;
+      padding: 18px 20px;
+      border: 1px solid #34484c;
+      border-radius: 9px;
+      background: #162227;
+      box-shadow: inset 0 1px #ffffff08;
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 18px; letter-spacing: -.02em; }
+    .panel-intro { margin: 0 0 16px; color: #aab9b6; font-size: 12px; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr 1fr;
+      gap: 18px 34px;
+      height: 174px;
+      align-items: center;
+    }
+    .node {
+      position: relative;
+      min-height: 76px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 1px solid #486265;
+      border-radius: 7px;
+      background: #1d3035;
+    }
+    .node strong { color: #f0f5e9; font-size: 13px; }
+    .node span { margin-top: 5px; color: #a9b9b5; font-size: 11px; line-height: 1.3; }
+    .node .number { position: absolute; top: -9px; left: 10px; padding: 1px 5px; color: #152026; background: #b6d65e; border-radius: 8px; font-size: 9px; font-weight: 800; }
+    .node:not(:nth-child(4)):after {
+      content: "→";
+      position: absolute;
+      right: -27px;
+      top: 50%;
+      color: #b6d65e;
+      font-size: 19px;
+      transform: translateY(-50%);
+    }
+    .node:nth-child(4):after {
+      content: "↓";
+      position: absolute;
+      right: 50%;
+      bottom: -27px;
+      color: #b6d65e;
+      font-size: 19px;
+      transform: translateX(50%);
+    }
+    .node:nth-child(n+5) { grid-row: 2; }
+    .node:nth-child(5) { grid-column: 4; }
+    .node:nth-child(6) { grid-column: 3; }
+    .node:nth-child(7) { grid-column: 2; }
+    .node:nth-child(8) { grid-column: 1; }
+    .node:nth-child(5):after, .node:nth-child(6):after, .node:nth-child(7):after { content: "←"; right: auto; left: -27px; }
+    .node:nth-child(8):after { content: none; }
+    .branch-note {
+      margin-top: 4px;
+      padding: 9px 11px;
+      border-left: 3px solid #e8ab57;
+      color: #c3ceca;
+      background: #202b2d;
+      font-size: 11px;
+    }
+    .branch-note strong { color: #f2c578; }
+    .architecture { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .function-card { min-height: 69px; padding: 10px 11px; border: 1px solid #30464a; border-radius: 6px; background: #19292e; }
+    .function-card code { color: #c7e478; font-size: 12px; font-weight: 700; }
+    .function-card p { margin: 5px 0 0; color: #aab9b6; font-size: 10px; line-height: 1.35; }
+    .lower-grid { display: grid; grid-template-columns: .92fr .95fr 1.13fr; gap: 16px; min-height: 0; }
+    .evidence { display: flex; flex-direction: column; }
+    .evidence h2 { margin-bottom: 13px; }
+    .evidence-list { display: grid; gap: 10px; }
+    .commit { padding: 10px 11px; border: 1px solid #33494b; border-radius: 6px; background: #1a2a2e; }
+    .commit code { color: #c7e478; font-size: 11px; font-weight: 700; }
+    .commit span { display: block; margin-top: 4px; color: #c1ccca; font-size: 11px; }
+    .branch { margin-top: auto; padding-top: 12px; color: #aab9b6; font-size: 11px; }
+    .branch strong { color: #eef4ed; }
+    .warning {
+      margin-top: 7px;
+      padding: 12px;
+      border: 1px solid #a87b3b;
+      border-radius: 6px;
+      color: #dec99e;
+      background: #342d20;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .warning strong { display: block; margin-bottom: 6px; color: #f2c578; font-size: 12px; }
+    .steps { display: grid; gap: 9px; margin-top: 13px; }
+    .step { display: grid; grid-template-columns: 24px 1fr; gap: 8px; color: #b2bfbb; font-size: 10px; line-height: 1.4; }
+    .step b { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; color: #142024; background: #b6d65e; font-size: 10px; }
+    .lighthouse-top { display: flex; align-items: center; gap: 18px; }
+    .score {
+      width: 112px;
+      height: 112px;
+      flex: 0 0 112px;
+      display: grid;
+      place-content: center;
+      border: 8px solid #b6d65e;
+      border-radius: 50%;
+      text-align: center;
+      color: #d7ed9b;
+    }
+    .score strong { font-size: 37px; line-height: 1; }
+    .score span { margin-top: 4px; color: #b8c5b7; font-size: 9px; letter-spacing: .12em; }
+    .audit-copy { color: #afbfbb; font-size: 11px; line-height: 1.55; }
+    .audit-copy strong { color: #eef4ed; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .metric { padding: 10px 8px; border: 1px solid #314649; border-radius: 5px; background: #19292d; }
+    .metric strong { display: block; color: #d9e9a7; font-size: 15px; }
+    .metric span { display: block; margin-top: 4px; color: #aab9b6; font-size: 9px; }
+    .caveat { margin: 13px 0 0; color: #aab9b6; font-size: 10px; line-height: 1.45; }
+    .storage { margin-top: auto; padding-top: 12px; border-top: 1px solid #314649; color: #9eafab; font-size: 10px; }
+    .storage strong { color: #c7e478; }
+    footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #33464b; color: #839491; font-size: 9px; letter-spacing: .04em; }
+    footer strong { color: #b6d65e; }
+    @media print {
+      html, body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .page { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <p class="eyebrow">AngelTraz · Documento de avance</p>
+        <h1>Manual técnico de auditoría e infraestructura</h1>
+      </div>
+      <div class="header-meta">
+        <strong>PORTAFOLIO WEB · ARCADE 2D / 3D</strong><br>
+        Revisión local · 29 octubre 2026<br>
+        Formato apaisado · 1920 × 1080 px
+      </div>
+    </header>
+
+    <section class="top-grid" aria-label="Arquitectura de animación y funciones">
+      <article class="panel">
+        <p class="kicker">01 · Lógica de animación y colisiones</p>
+        <h2>Ciclo de actualización del partido</h2>
+        <p class="panel-intro">Flujo de referencia de Cancha Brava: cada frame actualiza estado, resuelve contactos y dibuja el resultado.</p>
+        <div class="flow" aria-label="Flujo de ocho pasos desde requestAnimationFrame hasta el siguiente frame">
+          <div class="node"><span class="number">01</span><strong>Entrada</strong><span>keydown / keyup · WASD y flechas</span></div>
+          <div class="node"><span class="number">02</span><strong>frame(timestamp)</strong><span>Calcula dt y limita el salto temporal</span></div>
+          <div class="node"><span class="number">03</span><strong>update(dt)</strong><span>Movimiento humano, CPU y balón</span></div>
+          <div class="node"><span class="number">04</span><strong>Detección</strong><span>Contactos jugador-balón y jugador-jugador</span></div>
+          <div class="node"><span class="number">05</span><strong>Resolver colisiones</strong><span>Rebotes, posesión y postes</span></div>
+          <div class="node"><span class="number">06</span><strong>¿Gol?</strong><span>Valida área, altura y línea de portería</span></div>
+          <div class="node"><span class="number">07</span><strong>Puntaje / récord</strong><span>Actualiza estado y localStorage</span></div>
+          <div class="node"><span class="number">08</span><strong>Render y siguiente frame</strong><span>Canvas · HUD · requestAnimationFrame</span></div>
+        </div>
+        <div class="branch-note"><strong>Rama sin gol:</strong> el balón rebota en los límites y el ciclo continúa; una colisión válida actualiza la posesión antes de renderizar.</div>
+      </article>
+
+      <article class="panel">
+        <p class="kicker">02 · Arquitectura JavaScript</p>
+        <h2>Responsabilidades por función</h2>
+        <p class="panel-intro">Funciones observables en <strong>Juegos/JuegoFútbol/index.html</strong>.</p>
+        <div class="architecture">
+          <div class="function-card"><code>handleKey / moveUser</code><p>Enrutan entradas y actualizan la posición y dirección de cada jugador.</p></div>
+          <div class="function-card"><code>moveCpu / cpuDecision</code><p>Coordina compañeros, rivales, desplazamiento y decisiones de pase/tiro.</p></div>
+          <div class="function-card"><code>resolveBall / resolvePlayerCollisions</code><p>Aplican física y resuelven contactos entre balón y jugadores.</p></div>
+          <div class="function-card"><code>drawField / drawHud</code><p>Renderizan cancha, jugadores, marcador, reloj y estado del partido.</p></div>
+          <div class="function-card"><code>updateRecords()</code><p>Persiste el máximo de goles de cada lado en localStorage.</p></div>
+          <div class="function-card"><code>frame(timestamp)</code><p>Orquesta update, render y el siguiente requestAnimationFrame.</p></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="lower-grid" aria-label="Evidencia de versiones, despliegue y rendimiento">
+      <article class="panel evidence">
+        <p class="kicker">03 · Control de versiones</p>
+        <h2>Historial Git disponible</h2>
+        <p class="panel-intro">Últimos commits presentes localmente antes de este avance.</p>
+        <div class="evidence-list">
+          <div class="commit"><code>8911836</code><span>Mejora del contenido.</span></div>
+          <div class="commit"><code>560e1fd</code><span>Juegos en la página.</span></div>
+          <div class="commit"><code>24cc3f6</code><span>Initial commit</span></div>
+        </div>
+        <div class="branch">Rama inspeccionada: <strong>main</strong><br>El directorio no tiene remoto Git configurado.</div>
+      </article>
+
+      <article class="panel evidence">
+        <p class="kicker">04 · GitHub y Vercel</p>
+        <h2>Estado de publicación</h2>
+        <div class="warning">
+          <strong>Evidencia externa pendiente</strong>
+          En este checkout no hay remoto GitHub, proyecto Vercel ni URL de producción disponible. No se incluye una captura de panel ni se afirma que exista un despliegue.
+        </div>
+        <div class="steps">
+          <div class="step"><b>1</b><span>Conectar el repositorio remoto autorizado de GitHub.</span></div>
+          <div class="step"><b>2</b><span>Importar ese repositorio en Vercel y configurar build/output.</span></div>
+          <div class="step"><b>3</b><span>Reemplazar esta nota con capturas verificables del repositorio y del deployment.</span></div>
+        </div>
+      </article>
+
+      <article class="panel evidence">
+        <p class="kicker">05 · Auditoría Lighthouse</p>
+        <h2>Rendimiento móvil · página principal</h2>
+        <div class="lighthouse-top">
+          <div class="score" aria-label="Puntuación Lighthouse de rendimiento: 90 sobre 100"><strong>90</strong><span>DE 100</span></div>
+          <div class="audit-copy">
+            <strong>Rendimiento: supera el umbral 85/100.</strong><br>
+            Lighthouse 13.6.0 · Chrome 156<br>
+            Perfil móvil emulado · 29 oct 2026<br>
+            URL medida: <strong>http://127.0.0.1:4173/</strong>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><strong>0,9 s</strong><span>FCP / LCP</span></div>
+          <div class="metric"><strong>400 ms</strong><span>Total Blocking Time</span></div>
+          <div class="metric"><strong>0</strong><span>Cumulative Layout Shift</span></div>
+        </div>
+        <p class="caveat">Medición de laboratorio sobre preview local; no representa una verificación del dominio desplegado en Vercel.</p>
+        <div class="storage"><strong>Récords de juegos:</strong> máximos guardados por navegador en localStorage; cada juego mantiene su propio registro.</div>
+      </article>
+    </section>
+
+    <footer>
+      <span>Manual de avances · evidencia de código y medición local; completar paneles externos tras publicar.</span>
+      <strong>ANGELTRAZ · 01 / 01</strong>
+    </footer>
+  </main>
+</body>
+</html>

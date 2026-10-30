@@ -25,6 +25,7 @@ Fase actual: Fase 9. Movimiento dinámico, persecución con navegación y finale
 - Reacción visible de los perros ante proximidad, distracción y la amenaza simbólica de la piedra invisible.
 - Estados de perro: tranquilo, alerta, persecución, ataque y agotamiento.
 - Ruta de evacuación con tres marcadores secuenciales, distancia y estado del tramo activo.
+- Récord máximo de tramos completados guardado en el navegador y visible en el menú y al terminar una partida.
 - Daño por contacto ajustado a 6 puntos cada 1,4 segundos mientras persista el contacto.
 - Ondas y partículas breves con color por herramienta; el daño recibido activa un destello periférico.
 - Aviso textual temporal por cada impacto y barra de vida verde/ámbar/roja según el nivel; la vida anuncia su valor a tecnologías de asistencia.
